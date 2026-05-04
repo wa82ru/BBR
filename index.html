@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, user-scalable=no">
+<title>Baccarat Rhythm</title>
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0a0c">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Baccarat">
+<link rel="apple-touch-icon" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
+<link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Bebas+Neue&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<style>
+:root {
+  --gold: #c9a84c;
+  --gold-light: #e8c97a;
+  --gold-dim: #7a6230;
+  --banker: #c0392b;
+  --banker-glow: #ff6b5b;
+  --player: #1a6fa8;
+  --player-glow: #5ab3f5;
+  --tie: #1e8c5a;
+  --tie-glow: #4de8a0;
+  --bg: #0a0a0c;
+  --surface: #111118;
+  --surface2: #18181f;
+  --border: rgba(201,168,76,0.18);
+  --text: #e8e0d0;
+  --muted: #8a8070;
+}
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+html, body { overscroll-behavior: none; }
+body {
+  background: var(--bg);
+  color: var(--text);
+  font-family: 'Cormorant Garamond', serif;
+  min-height: 100vh;
+  min-height: 100dvh;
+  overflow-x: hidden;
+  position: relative;
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  -webkit-user-select: none;
+  user-select: none;
+}
+/* Subtle felt texture overlay */
+body::before {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 0%, rgba(201,168,76,0.04) 0%, transparent 60%),
+    radial-gradient(ellipse 60% 80% at 20% 100%, rgba(26,111,168,0.04) 0%, transparent 50%),
+    radial-gradient(ellipse 60% 80% at 80% 100%, rgba(192,57,43,0.04) 0%, transparent 50%);
+  pointer-events: none;
+  z-index: 0;
+}
+/* Gold diamond pattern */
+body::after {
+  content: '';
+  position: fixed;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    45deg,
+    transparent,
+    transparent 40px,
+    rgba(201,168,76,0.025) 40px,
+    rgba(201,168,76,0.025) 41px
+  ),
+  repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 40px,
+    rgba(201,168,76,0.025) 40px,
+    rgba(201,168,76,0.025) 41px
+  );
+  pointer-events: none;
+  z-index: 0;
+}
+.wrapper {
+  position: relative;
+  z-index: 1;
+  max-width: 520px;
+  margin: 0 auto;
+  padding: 0 20px 40px;
+}
+/* ── Header ── */
+header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 0 18px;
+  border-bottom: 1px solid var(--border);
+}
+.logo {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  letter-spacing: 4px;
+  background: linear-gradient(135deg, var(--gold-light), var(--gold), var(--gold-dim));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+.logo span {
+  font-family: 'Cormorant Garamond', serif;
+  font-style: italic;
+  font-size: 13px;
+  font-weight: 300;
+  letter-spacing: 2px;
+  display: block;
+  -webkit-text-fill-color: var(--muted);
+  color: var(--muted);
+  margin-top: -2px;
+}
+#reset-btn {
+  background: transparent;
+  border: 1px solid var(--border);
+  color: var(--muted);
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 2px;
+  padding: 7px 14px;
+  border-radius: 4px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+#reset-btn:hover {
+  border-color: var(--gold-dim);
+  color: var(--gold);
+}
+/* ── Score Panel ── */
+.score-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  gap: 1px;
+  background: var(--border);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin: 24px 0;
+}
+.score-cell {
+  background: var(--surface);
+  padding: 14px 10px;
+  text-align: center;
+}
+.score-cell .label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 6px;
+}
+.score-cell .value {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 28px;
+  letter-spacing: 1px;
+  color: var(--gold-light);
+  line-height: 1;
+  transition: transform 0.15s, color 0.2s;
+}
+.score-cell.highlight .value {
+  color: #fff;
+}
+/* ── Flash Message ── */
+#flash-wrap {
+  height: 70px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 10px 0;
+}
+#flash {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 52px;
+  letter-spacing: 8px;
+  opacity: 0;
+  transform: scale(0.8) translateY(4px);
+  transition: opacity 0.1s, transform 0.1s;
+}
+#flash.show {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+#flash.hit { color: var(--gold-light); text-shadow: 0 0 30px rgba(232,201,122,0.7); }
+#flash.miss { color: #e05c5c; text-shadow: 0 0 30px rgba(224,92,92,0.5); }
+#flash.tie { color: var(--tie-glow); text-shadow: 0 0 30px rgba(77,232,160,0.5); }
+/* ── Buttons ── */
+.btn-row {
+  display: grid;
+  grid-template-columns: 1fr 0.65fr 1fr;
+  gap: 12px;
+  margin: 8px 0 28px;
+}
+.bet-btn {
+  position: relative;
+  background: var(--surface2);
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 10px;
+  padding: 22px 10px 18px;
+  cursor: pointer;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 20px;
+  letter-spacing: 3px;
+  color: rgba(255,255,255,0.5);
+  overflow: hidden;
+  transition: transform 0.12s, border-color 0.2s;
+  outline: none;
+  -webkit-touch-callout: none;
+}
+.bet-btn::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  transition: opacity 0.25s;
+}
+.bet-btn:hover { transform: translateY(-2px); }
+.bet-btn:active { transform: scale(0.96); }
+/* Player */
+.btn-p { border-top: 3px solid var(--player); }
+.btn-p::before { background: linear-gradient(160deg, rgba(26,111,168,0.3), transparent 60%); }
+.btn-p:hover { border-color: var(--player-glow); color: var(--player-glow); }
+.btn-p:hover::before { opacity: 1; }
+.btn-p .btn-icon { color: var(--player); }
+/* Tie */
+.btn-t { border-top: 3px solid var(--tie); }
+.btn-t::before { background: linear-gradient(160deg, rgba(30,140,90,0.3), transparent 60%); }
+.btn-t:hover { border-color: var(--tie-glow); color: var(--tie-glow); }
+.btn-t:hover::before { opacity: 1; }
+.btn-t .btn-icon { color: var(--tie); }
+/* Banker */
+.btn-b { border-top: 3px solid var(--banker); }
+.btn-b::before { background: linear-gradient(160deg, rgba(192,57,43,0.3), transparent 60%); }
+.btn-b:hover { border-color: var(--banker-glow); color: var(--banker-glow); }
+.btn-b:hover::before { opacity: 1; }
+.btn-b .btn-icon { color: var(--banker); }
+.btn-icon {
+  font-size: 11px;
+  font-family: 'DM Mono', monospace;
+  letter-spacing: 1px;
+  display: block;
+  margin-bottom: 6px;
+  transition: color 0.2s;
+}
+.bet-btn span.main {
+  display: block;
+  position: relative;
+  z-index: 1;
+}
+/* Active press ripple */
+.bet-btn.pressed::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: rgba(255,255,255,0.07);
+  border-radius: inherit;
+  animation: pressFlash 0.3s ease-out forwards;
+}
+@keyframes pressFlash {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+/* ── Odds display ── */
+.odds-row {
+  display: grid;
+  grid-template-columns: 1fr 0.65fr 1fr;
+  gap: 12px;
+  margin-bottom: 24px;
+}
+.odds-chip {
+  text-align: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 1px;
+  color: var(--muted);
+  padding: 4px 0;
+}
+/* ── History ── */
+.history-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+}
+.history-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+#history-count {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--gold-dim);
+}
+#history {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  min-height: 36px;
+}
+.h-dot {
+  width: 18px;
+  height: 18px;
+  border-radius: 50%;
+  position: relative;
+  transition: transform 0.2s;
+}
+.h-dot:hover { transform: scale(1.3); }
+.h-dot.h-b { background: var(--banker); box-shadow: 0 0 6px rgba(192,57,43,0.5); }
+.h-dot.h-p { background: var(--player); box-shadow: 0 0 6px rgba(26,111,168,0.5); }
+.h-dot.h-t { background: var(--tie); box-shadow: 0 0 6px rgba(30,140,90,0.5); }
+.h-dot.new {
+  animation: dotPop 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards;
+}
+@keyframes dotPop {
+  0% { transform: scale(0); opacity: 0; }
+  100% { transform: scale(1); opacity: 1; }
+}
+/* ── Streak bar ── */
+.streak-wrap {
+  margin: 20px 0 8px;
+}
+.streak-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 8px;
+}
+.streak-bar {
+  height: 3px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.streak-fill {
+  height: 100%;
+  border-radius: 2px;
+  background: linear-gradient(90deg, var(--gold-dim), var(--gold-light));
+  transition: width 0.4s cubic-bezier(0.34,1.2,0.64,1);
+  box-shadow: 0 0 8px rgba(201,168,76,0.4);
+}
+/* ── Divider ── */
+.divider {
+  height: 1px;
+  background: var(--border);
+  margin: 20px 0;
+}
+/* score bump animation */
+@keyframes scoreBump {
+  0% { transform: scale(1); }
+  40% { transform: scale(1.25); }
+  100% { transform: scale(1); }
+}
+.bump { animation: scoreBump 0.3s ease-out; }
+
+/* iPhone notch / safe area additional padding for body */
+@supports (padding: max(0px)) {
+  .wrapper {
+    padding-left: max(20px, env(safe-area-inset-left));
+    padding-right: max(20px, env(safe-area-inset-right));
+    padding-bottom: max(40px, env(safe-area-inset-bottom));
+  }
+}
+</style>
+</head>
+<body>
+<div class="wrapper">
+  <header>
+    <div class="logo">
+      Baccarat
+      <span>rhythm</span>
+    </div>
+    <button id="reset-btn" onclick="resetGame()">↺ RESET</button>
+  </header>
+  <div class="score-grid">
+    <div class="score-cell highlight">
+      <div class="label">Score</div>
+      <div class="value" id="score">0</div>
+    </div>
+    <div class="score-cell">
+      <div class="label">Best</div>
+      <div class="value" id="best">0</div>
+    </div>
+    <div class="score-cell highlight">
+      <div class="label">Combo</div>
+      <div class="value" id="combo">0</div>
+    </div>
+    <div class="score-cell">
+      <div class="label">Max</div>
+      <div class="value" id="bestCombo">0</div>
+    </div>
+  </div>
+  <div id="flash-wrap">
+    <div id="flash"></div>
+  </div>
+  <div class="btn-row">
+    <button class="bet-btn btn-p" onclick="hit('P')">
+      <span class="btn-icon">◈ P L A Y E R</span>
+      <span class="main">PLAYER</span>
+    </button>
+    <button class="bet-btn btn-t" onclick="hit('T')">
+      <span class="btn-icon">◈ T I E</span>
+      <span class="main">TIE</span>
+    </button>
+    <button class="bet-btn btn-b" onclick="hit('B')">
+      <span class="btn-icon">◈ B A N K E R</span>
+      <span class="main">BANKER</span>
+    </button>
+  </div>
+  <div class="odds-row">
+    <div class="odds-chip">1 : 1</div>
+    <div class="odds-chip">8 : 1</div>
+    <div class="odds-chip">0.95 : 1</div>
+  </div>
+  <div class="streak-wrap">
+    <div class="streak-label">Combo Streak</div>
+    <div class="streak-bar"><div class="streak-fill" id="streakFill" style="width:0%"></div></div>
+  </div>
+  <div class="divider"></div>
+  <div class="history-header">
+    <div class="history-title">Road Map</div>
+    <div id="history-count">0 rounds</div>
+  </div>
+  <div id="history"></div>
+</div>
+<script>
+let score = 0, combo = 0, history = [], locked = false, current = null;
+let best = Number(localStorage.getItem('baccarat_best') || 0);
+let bestCombo = Number(localStorage.getItem('baccarat_best_combo') || 0);
+const MAX_COMBO_BAR = 10;
+function next() {
+  const r = Math.random();
+  current = r < 0.11 ? 'T' : (Math.random() < 0.5 ? 'B' : 'P');
+  locked = false;
+}
+function vibrate(ms) {
+  if (navigator.vibrate) { try { navigator.vibrate(ms); } catch(e){} }
+}
+function hit(input) {
+  if (!current || locked) return;
+  locked = true;
+  const btn = document.querySelector(input === 'P' ? '.btn-p' : input === 'T' ? '.btn-t' : '.btn-b');
+  btn.classList.add('pressed');
+  setTimeout(() => btn.classList.remove('pressed'), 300);
+  // TIEが出た場合はスコア・コンボ変動なしでスキップ
+  if (current === 'T') {
+    showFlash('TIE', 'tie');
+    vibrate(20);
+    history.push(current);
+    renderHistory();
+    setTimeout(next, 700);
+    return;
+  }
+  const correct = input === current;
+  if (correct) {
+    score += 100; combo++;
+    showFlash('HIT', 'hit');
+    vibrate(15);
+  } else {
+    score -= 100; combo = 0;
+    showFlash('MISS', 'miss');
+    vibrate([0, 30, 40, 30]);
+  }
+  if (score > best) { best = score; localStorage.setItem('baccarat_best', best); }
+  if (combo > bestCombo) { bestCombo = combo; localStorage.setItem('baccarat_best_combo', bestCombo); }
+  history.push(current);
+  update();
+  renderHistory();
+  setTimeout(next, 700);
+}
+function showFlash(text, cls) {
+  const el = document.getElementById('flash');
+  el.className = '';
+  el.textContent = text;
+  void el.offsetWidth;
+  el.className = 'show ' + cls;
+  setTimeout(() => el.classList.remove('show'), 900);
+}
+function bumpEl(id) {
+  const el = document.getElementById(id);
+  el.classList.remove('bump');
+  void el.offsetWidth;
+  el.classList.add('bump');
+}
+function update() {
+  document.getElementById('score').textContent = score;
+  document.getElementById('best').textContent = best;
+  document.getElementById('combo').textContent = combo;
+  document.getElementById('bestCombo').textContent = bestCombo;
+  bumpEl('score'); bumpEl('combo');
+  const pct = Math.min(combo / MAX_COMBO_BAR * 100, 100);
+  document.getElementById('streakFill').style.width = pct + '%';
+}
+function renderHistory() {
+  const el = document.getElementById('history');
+  el.innerHTML = '';
+  const slice = history.slice(-60);
+  slice.forEach((r, i) => {
+    const d = document.createElement('div');
+    d.className = 'h-dot h-' + r.toLowerCase();
+    if (i === slice.length - 1) d.classList.add('new');
+    el.appendChild(d);
+  });
+  document.getElementById('history-count').textContent = history.length + ' rounds';
+}
+function resetGame() {
+  score = 0; combo = 0; history = []; locked = false; current = null;
+  update(); renderHistory();
+  document.getElementById('flash').className = '';
+  document.getElementById('streakFill').style.width = '0%';
+  setTimeout(next, 500);
+}
+update();
+next();
+// PWA
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    navigator.serviceWorker.register('sw.js').catch(()=>{});
+  });
+}
+// 二重タップでズームを抑止（iOS Safari）
+let lastTouch = 0;
+document.addEventListener('touchend', (e) => {
+  const now = Date.now();
+  if (now - lastTouch <= 300) e.preventDefault();
+  lastTouch = now;
+}, { passive: false });
+</script>
+</body>
+</html>
