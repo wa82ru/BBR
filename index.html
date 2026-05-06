@@ -300,29 +300,88 @@ header {
   font-size: 10px;
   color: var(--gold-dim);
 }
+/* ── Big Road（大路）─── */
 #history {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 5px;
-  min-height: 36px;
+  --cell: 22px;
+  display: grid;
+  grid-template-rows: repeat(6, var(--cell));
+  grid-auto-flow: column;
+  grid-auto-columns: var(--cell);
+  gap: 1px;
+  padding: 6px;
+  background:
+    linear-gradient(to right, rgba(255,255,255,0.035) 1px, transparent 1px) 0 0 / var(--cell) var(--cell),
+    linear-gradient(to bottom, rgba(255,255,255,0.035) 1px, transparent 1px) 0 0 / var(--cell) var(--cell),
+    #08080a;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  scroll-behavior: smooth;
+  min-height: calc(var(--cell) * 6 + 14px);
 }
-.h-dot {
-  width: 18px;
-  height: 18px;
-  border-radius: 50%;
+#history::-webkit-scrollbar { height: 4px; }
+#history::-webkit-scrollbar-track { background: transparent; }
+#history::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.2); border-radius: 2px; }
+.br-cell {
   position: relative;
-  transition: transform 0.2s;
+  width: var(--cell);
+  height: var(--cell);
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
-.h-dot:hover { transform: scale(1.3); }
-.h-dot.h-b { background: var(--banker); box-shadow: 0 0 6px rgba(192,57,43,0.5); }
-.h-dot.h-p { background: var(--player); box-shadow: 0 0 6px rgba(26,111,168,0.5); }
-.h-dot.h-t { background: var(--tie); box-shadow: 0 0 6px rgba(30,140,90,0.5); }
-.h-dot.new {
-  animation: dotPop 0.3s cubic-bezier(0.34,1.56,0.64,1) forwards;
+.br-cell::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 50%;
+  border: 2px solid currentColor;
+  background: transparent;
+  box-sizing: border-box;
+}
+.br-b { color: var(--banker); }
+.br-p { color: var(--player); }
+.br-b::before { box-shadow: 0 0 6px rgba(192,57,43,0.45), inset 0 0 4px rgba(192,57,43,0.25); }
+.br-p::before { box-shadow: 0 0 6px rgba(26,111,168,0.45), inset 0 0 4px rgba(26,111,168,0.25); }
+.br-cell .tie-slash {
+  position: absolute;
+  width: 80%;
+  height: 2px;
+  background: var(--tie-glow);
+  transform: rotate(-45deg);
+  box-shadow: 0 0 5px rgba(77,232,160,0.6);
+  border-radius: 1px;
+  z-index: 2;
+}
+.br-cell .tie-num {
+  position: absolute;
+  bottom: -1px;
+  right: -1px;
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  color: var(--tie-glow);
+  line-height: 1;
+  z-index: 3;
+  text-shadow: 0 0 3px rgba(0,0,0,0.9);
+}
+.br-cell.new::before {
+  animation: dotPop 0.3s cubic-bezier(0.34,1.56,0.64,1);
 }
 @keyframes dotPop {
   0% { transform: scale(0); opacity: 0; }
   100% { transform: scale(1); opacity: 1; }
+}
+.br-empty {
+  grid-row: 1 / span 6;
+  grid-column: 1 / span 6;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--gold-dim);
+  letter-spacing: 4px;
 }
 /* ── Streak bar ── */
 .streak-wrap {
@@ -348,6 +407,36 @@ header {
   background: linear-gradient(90deg, var(--gold-dim), var(--gold-light));
   transition: width 0.4s cubic-bezier(0.34,1.2,0.64,1);
   box-shadow: 0 0 8px rgba(201,168,76,0.4);
+}
+/* ── Shoe info ── */
+.shoe-info {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  margin: -8px 4px 14px;
+  text-transform: uppercase;
+  transition: color 0.4s, transform 0.4s;
+}
+.shoe-info .sep { opacity: 0.3; }
+.shoe-info .progress {
+  flex: 1;
+  height: 2px;
+  background: rgba(255,255,255,0.05);
+  border-radius: 1px;
+  overflow: hidden;
+}
+.shoe-info .progress > div {
+  height: 100%;
+  background: linear-gradient(90deg, var(--gold-dim), var(--gold));
+  transition: width 0.3s ease;
+}
+.shoe-info.flash {
+  color: var(--gold-light);
+  transform: translateY(-1px);
 }
 /* ── Divider ── */
 .divider {
@@ -400,6 +489,12 @@ header {
       <div class="value" id="bestCombo">0</div>
     </div>
   </div>
+  <div class="shoe-info" id="shoe-info">
+    <span>SHOE <span id="shoe-num">1</span></span>
+    <span class="sep">·</span>
+    <span><span id="shoe-cards">312</span> / 312</span>
+    <div class="progress"><div id="shoeFill" style="width:100%"></div></div>
+  </div>
   <div id="flash-wrap">
     <div id="flash"></div>
   </div>
@@ -420,7 +515,7 @@ header {
   <div class="odds-row">
     <div class="odds-chip">1 : 1</div>
     <div class="odds-chip">8 : 1</div>
-    <div class="odds-chip">0.95 : 1</div>
+    <div class="odds-chip">1 : 1</div>
   </div>
   <div class="streak-wrap">
     <div class="streak-label">Combo Streak</div>
@@ -428,7 +523,7 @@ header {
   </div>
   <div class="divider"></div>
   <div class="history-header">
-    <div class="history-title">Road Map</div>
+    <div class="history-title">Big Road · 大路</div>
     <div id="history-count">0 rounds</div>
   </div>
   <div id="history"></div>
@@ -438,36 +533,133 @@ let score = 0, combo = 0, history = [], locked = false, current = null;
 let best = Number(localStorage.getItem('baccarat_best') || 0);
 let bestCombo = Number(localStorage.getItem('baccarat_best_combo') || 0);
 const MAX_COMBO_BAR = 10;
+
+// === Bet & payout config ===
+const BET = 100;
+const PAYOUT = { B: 1, P: 1, T: 8 }; // 1倍 = +100, 8倍 = +800
+
+// === Shoe (6デック=312枚) ===
+const NUM_DECKS = 6;
+const SHOE_SIZE = NUM_DECKS * 52; // 312
+const CUT_THRESHOLD = 14; // 残りこの枚数を下回ったら新シューに（実カジノ準拠）
+let shoe = [];
+let shoeNumber = 0;
+
+function buildShoe() {
+  // バカラのカード値: A=1, 2-9=ピップ, 10/J/Q/K=0
+  const deck = [];
+  for (let d = 0; d < NUM_DECKS; d++) {
+    for (let suit = 0; suit < 4; suit++) {
+      deck.push(1);                              // A
+      for (let v = 2; v <= 9; v++) deck.push(v); // 2-9
+      deck.push(0); deck.push(0); deck.push(0); deck.push(0); // 10,J,Q,K
+    }
+  }
+  // Fisher-Yates シャッフル
+  for (let i = deck.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [deck[i], deck[j]] = [deck[j], deck[i]];
+  }
+  return deck;
+}
+
+function newShoe(flash = false) {
+  shoe = buildShoe();
+  shoeNumber++;
+  updateShoeUI();
+  if (flash) {
+    const info = document.getElementById('shoe-info');
+    info.classList.add('flash');
+    setTimeout(() => info.classList.remove('flash'), 800);
+  }
+}
+
+function dealHand() {
+  // 残り少なければ自動で新シュー
+  if (shoe.length < CUT_THRESHOLD) newShoe(true);
+
+  const p1 = shoe.pop(), b1 = shoe.pop();
+  const p2 = shoe.pop(), b2 = shoe.pop();
+  let pTotal = (p1 + p2) % 10;
+  let bTotal = (b1 + b2) % 10;
+
+  // ナチュラル（8 or 9）が出たら追加カードなし
+  if (pTotal < 8 && bTotal < 8) {
+    let p3 = null;
+    // プレイヤー第3カードルール: 0-5でヒット、6-7でスタンド
+    if (pTotal <= 5) {
+      p3 = shoe.pop();
+      pTotal = (pTotal + p3) % 10;
+    }
+    // バンカー第3カードルール（Tableau）
+    if (p3 === null) {
+      // プレイヤーがスタンドした場合: バンカーは0-5でヒット
+      if (bTotal <= 5) {
+        const b3 = shoe.pop();
+        bTotal = (bTotal + b3) % 10;
+      }
+    } else {
+      // プレイヤーがヒットした場合: バンカーの合計とp3に応じて判定
+      let bDraw = false;
+      if (bTotal <= 2) bDraw = true;
+      else if (bTotal === 3) bDraw = (p3 !== 8);
+      else if (bTotal === 4) bDraw = (p3 >= 2 && p3 <= 7);
+      else if (bTotal === 5) bDraw = (p3 >= 4 && p3 <= 7);
+      else if (bTotal === 6) bDraw = (p3 === 6 || p3 === 7);
+      // bTotal === 7 はスタンド
+      if (bDraw) {
+        const b3 = shoe.pop();
+        bTotal = (bTotal + b3) % 10;
+      }
+    }
+  }
+
+  updateShoeUI();
+  if (pTotal > bTotal) return 'P';
+  if (bTotal > pTotal) return 'B';
+  return 'T';
+}
+
+function updateShoeUI() {
+  document.getElementById('shoe-num').textContent = shoeNumber;
+  document.getElementById('shoe-cards').textContent = shoe.length;
+  const pct = (shoe.length / SHOE_SIZE) * 100;
+  document.getElementById('shoeFill').style.width = pct + '%';
+}
+
 function next() {
-  const r = Math.random();
-  current = r < 0.11 ? 'T' : (Math.random() < 0.5 ? 'B' : 'P');
+  current = dealHand();
   locked = false;
 }
+
 function vibrate(ms) {
   if (navigator.vibrate) { try { navigator.vibrate(ms); } catch(e){} }
 }
+
 function hit(input) {
   if (!current || locked) return;
   locked = true;
   const btn = document.querySelector(input === 'P' ? '.btn-p' : input === 'T' ? '.btn-t' : '.btn-b');
   btn.classList.add('pressed');
   setTimeout(() => btn.classList.remove('pressed'), 300);
-  // TIEが出た場合はスコア・コンボ変動なしでスキップ
-  if (current === 'T') {
-    showFlash('TIE', 'tie');
-    vibrate(20);
-    history.push(current);
-    renderHistory();
-    setTimeout(next, 700);
-    return;
-  }
+
   const correct = input === current;
   if (correct) {
-    score += 100; combo++;
-    showFlash('HIT', 'hit');
-    vibrate(15);
+    // 当たり: ベット額 × 倍率
+    const profit = BET * PAYOUT[current];
+    score += profit;
+    combo++;
+    if (current === 'T') {
+      showFlash('+' + profit, 'hit');
+      vibrate([0, 25, 30, 25, 30, 40]); // TIE当たりは派手な振動
+    } else {
+      showFlash('HIT', 'hit');
+      vibrate(15);
+    }
   } else {
-    score -= 100; combo = 0;
+    // 外れ: ベット額没収
+    score -= BET;
+    combo = 0;
     showFlash('MISS', 'miss');
     vibrate([0, 30, 40, 30]);
   }
@@ -501,26 +693,103 @@ function update() {
   const pct = Math.min(combo / MAX_COMBO_BAR * 100, 100);
   document.getElementById('streakFill').style.width = pct + '%';
 }
+// === Big Road（大路）算出 ===
+// 6行のグリッドに、同じ結果が続けば下へ、変われば次の列の最上段へ。
+// 行末に到達したら同じ行で右へ伸ばす（dragon tail = 龍尾）。
+// TIE は直前の B/P セルに緑のスラッシュとして重ねる。
+function buildBigRoad(hist) {
+  const ROWS = 6;
+  const cells = [];
+  const occupied = new Set(); // "row,col"
+  let last = null;
+  let pendingTies = 0;
+  const key = (r, c) => r + ',' + c;
+
+  for (const res of hist) {
+    if (res === 'T') {
+      if (last) last.ties++;
+      else pendingTies++;
+      continue;
+    }
+    if (!last) {
+      const cell = { row: 0, col: 0, result: res, ties: pendingTies };
+      cells.push(cell);
+      occupied.add(key(0, 0));
+      last = cell;
+      pendingTies = 0;
+    } else if (last.result === res) {
+      // 同じ結果 → まず真下を試す
+      let r = last.row + 1, c = last.col;
+      if (r >= ROWS || occupied.has(key(r, c))) {
+        // dragon tail: 同じ行で右へ
+        r = last.row;
+        c = last.col + 1;
+        while (occupied.has(key(r, c))) c++;
+      }
+      const cell = { row: r, col: c, result: res, ties: 0 };
+      cells.push(cell);
+      occupied.add(key(r, c));
+      last = cell;
+    } else {
+      // 結果が変わった → 次の列の最上段
+      const c = last.col + 1;
+      const cell = { row: 0, col: c, result: res, ties: 0 };
+      cells.push(cell);
+      occupied.add(key(0, c));
+      last = cell;
+    }
+  }
+  return cells;
+}
+
 function renderHistory() {
   const el = document.getElementById('history');
   el.innerHTML = '';
-  const slice = history.slice(-60);
-  slice.forEach((r, i) => {
-    const d = document.createElement('div');
-    d.className = 'h-dot h-' + r.toLowerCase();
-    if (i === slice.length - 1) d.classList.add('new');
-    el.appendChild(d);
-  });
   document.getElementById('history-count').textContent = history.length + ' rounds';
+
+  const cells = buildBigRoad(history);
+  if (cells.length === 0) {
+    const placeholder = document.createElement('div');
+    placeholder.className = 'br-empty';
+    placeholder.textContent = '— start —';
+    el.appendChild(placeholder);
+    return;
+  }
+
+  cells.forEach((c, idx) => {
+    const div = document.createElement('div');
+    div.className = 'br-cell br-' + c.result.toLowerCase();
+    div.style.gridRow = (c.row + 1);
+    div.style.gridColumn = (c.col + 1);
+    if (c.ties > 0) {
+      const slash = document.createElement('div');
+      slash.className = 'tie-slash';
+      div.appendChild(slash);
+      if (c.ties > 1) {
+        const num = document.createElement('div');
+        num.className = 'tie-num';
+        num.textContent = c.ties;
+        div.appendChild(num);
+      }
+    }
+    if (idx === cells.length - 1) div.classList.add('new');
+    el.appendChild(div);
+  });
+
+  // 右端まで自動スクロール
+  requestAnimationFrame(() => { el.scrollLeft = el.scrollWidth; });
 }
 function resetGame() {
   score = 0; combo = 0; history = []; locked = false; current = null;
+  shoeNumber = 0;
+  newShoe(false);
   update(); renderHistory();
   document.getElementById('flash').className = '';
   document.getElementById('streakFill').style.width = '0%';
   setTimeout(next, 500);
 }
 update();
+newShoe(false);
 next();
 // PWA
 if ('serviceWorker' in navigator) {
