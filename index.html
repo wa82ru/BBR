@@ -465,6 +465,27 @@ header {
 }
 .bump { animation: scoreBump 0.3s ease-out; }
 
+/* ── 画面振動（NEW SHOE等のインパクト演出） ── */
+@keyframes screenShake {
+  0%   { transform: translate3d(0, 0, 0); }
+  8%   { transform: translate3d(-7px, -3px, 0); }
+  17%  { transform: translate3d(8px, 4px, 0); }
+  25%  { transform: translate3d(-6px, 5px, 0); }
+  33%  { transform: translate3d(7px, -4px, 0); }
+  42%  { transform: translate3d(-5px, 4px, 0); }
+  50%  { transform: translate3d(4px, -3px, 0); }
+  58%  { transform: translate3d(-4px, 2px, 0); }
+  67%  { transform: translate3d(3px, -2px, 0); }
+  75%  { transform: translate3d(-2px, 1px, 0); }
+  83%  { transform: translate3d(2px, -1px, 0); }
+  92%  { transform: translate3d(-1px, 1px, 0); }
+  100% { transform: translate3d(0, 0, 0); }
+}
+body.shake { animation: screenShake 0.55s ease-out; }
+@media (prefers-reduced-motion: reduce) {
+  body.shake { animation: none; }
+}
+
 /* ── New Shoe バナー ── */
 #shoe-banner {
   position: fixed;
@@ -682,6 +703,18 @@ function newShoe(flash = false) {
 }
 
 let shoeBannerTimer = null;
+let shakeTimer = null;
+function shakeScreen() {
+  const b = document.body;
+  if (shakeTimer) clearTimeout(shakeTimer);
+  b.classList.remove('shake');
+  void b.offsetWidth;
+  b.classList.add('shake');
+  shakeTimer = setTimeout(() => {
+    b.classList.remove('shake');
+    shakeTimer = null;
+  }, 600);
+}
 function showShoeBanner() {
   const el = document.getElementById('shoe-banner');
   document.getElementById('sb-num').textContent = shoeNumber;
@@ -689,7 +722,8 @@ function showShoeBanner() {
   el.classList.remove('show');
   void el.offsetWidth;
   el.classList.add('show');
-  vibrate([0, 30, 60, 30, 60, 50]);
+  shakeScreen();
+  vibrate([0, 30, 60, 30, 60, 50]); // 振動対応端末向け（iOSは無視される）
   shoeBannerTimer = setTimeout(() => {
     el.classList.remove('show');
     shoeBannerTimer = null;
@@ -783,8 +817,8 @@ function evaluate(input) {
   btn.classList.add('pressed');
   setTimeout(() => btn.classList.remove('pressed'), 200);
 
-  const correct = input === current;
-  if (correct) {
+  if (input === current) {
+    // 当たり: ベット額 × 倍率
     const profit = BET * PAYOUT[current];
     score += profit;
     combo++;
@@ -795,7 +829,12 @@ function evaluate(input) {
       showFlash('HIT', 'hit');
       vibrate(15);
     }
+  } else if (current === 'T' && (input === 'P' || input === 'B')) {
+    // プッシュ: P/Bに賭けてTie結果が出た → 賭け金返却。スコア変動なし、コンボは維持
+    showFlash('PUSH', 'tie');
+    vibrate(20);
   } else {
+    // 外れ: ベット額没収
     score -= BET;
     combo = 0;
     showFlash('MISS', 'miss');
