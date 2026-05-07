@@ -309,10 +309,7 @@ header {
   grid-auto-columns: var(--cell);
   gap: 1px;
   padding: 6px;
-  background:
-    linear-gradient(to right, rgba(255,255,255,0.035) 1px, transparent 1px) 0 0 / var(--cell) var(--cell),
-    linear-gradient(to bottom, rgba(255,255,255,0.035) 1px, transparent 1px) 0 0 / var(--cell) var(--cell),
-    #08080a;
+  background: #08080a;
   border: 1px solid var(--border);
   border-radius: 6px;
   overflow-x: auto;
@@ -636,28 +633,43 @@ function vibrate(ms) {
   if (navigator.vibrate) { try { navigator.vibrate(ms); } catch(e){} }
 }
 
+// === 連打対応 ===
+const COOLDOWN_MS = 200;     // 次のハンドまでの間隔
+const QUEUE_MAX = 5;          // ロック中に溜められる入力数
+const inputQueue = [];
+
 function hit(input) {
-  if (!current || locked) return;
+  if (locked) {
+    // 処理中はキューに積む（あふれたら破棄）
+    if (inputQueue.length < QUEUE_MAX) inputQueue.push(input);
+    return;
+  }
+  if (!current) return;
+  evaluate(input);
+}
+
+function evaluate(input) {
   locked = true;
   const btn = document.querySelector(input === 'P' ? '.btn-p' : input === 'T' ? '.btn-t' : '.btn-b');
+  // pressed クラスを毎回付け直してアニメーションを再トリガー
+  btn.classList.remove('pressed');
+  void btn.offsetWidth;
   btn.classList.add('pressed');
-  setTimeout(() => btn.classList.remove('pressed'), 300);
+  setTimeout(() => btn.classList.remove('pressed'), 200);
 
   const correct = input === current;
   if (correct) {
-    // 当たり: ベット額 × 倍率
     const profit = BET * PAYOUT[current];
     score += profit;
     combo++;
     if (current === 'T') {
       showFlash('+' + profit, 'hit');
-      vibrate([0, 25, 30, 25, 30, 40]); // TIE当たりは派手な振動
+      vibrate([0, 25, 30, 25, 30, 40]);
     } else {
       showFlash('HIT', 'hit');
       vibrate(15);
     }
   } else {
-    // 外れ: ベット額没収
     score -= BET;
     combo = 0;
     showFlash('MISS', 'miss');
@@ -668,15 +680,25 @@ function hit(input) {
   history.push(current);
   update();
   renderHistory();
-  setTimeout(next, 700);
+
+  setTimeout(() => {
+    next();
+    // キューに残ってたら即座に次を処理
+    if (inputQueue.length > 0 && current) {
+      const q = inputQueue.shift();
+      evaluate(q);
+    }
+  }, COOLDOWN_MS);
 }
+let flashTimer = null;
 function showFlash(text, cls) {
   const el = document.getElementById('flash');
+  if (flashTimer) clearTimeout(flashTimer);
   el.className = '';
   el.textContent = text;
   void el.offsetWidth;
   el.className = 'show ' + cls;
-  setTimeout(() => el.classList.remove('show'), 900);
+  flashTimer = setTimeout(() => { el.classList.remove('show'); flashTimer = null; }, 900);
 }
 function bumpEl(id) {
   const el = document.getElementById(id);
@@ -788,6 +810,8 @@ function renderHistory() {
 function resetGame() {
   score = 0; combo = 0; history = []; locked = false; current = null;
   shoeNumber = 0;
+  inputQueue.length = 0;
+  if (flashTimer) { clearTimeout(flashTimer); flashTimer = null; }
   newShoe(false);
   update(); renderHistory();
   document.getElementById('flash').className = '';
