@@ -694,14 +694,16 @@ function update() {
   document.getElementById('streakFill').style.width = pct + '%';
 }
 // === Big Road（大路）算出 ===
-// 6行のグリッドに、同じ結果が続けば下へ、変われば次の列の最上段へ。
-// 行末に到達したら同じ行で右へ伸ばす（dragon tail = 龍尾）。
+// 同じ結果が続けば下へ、最下段に到達したら同じ行で右へ（dragon tail = 龍尾）。
+// 結果が変わったときは「ストリークが開始した列 + 1」の最上段から新しい列を始める
+// （龍尾が右へ伸びていてもジャンプせず、龍尾の上に新しい列を重ねる）。
 // TIE は直前の B/P セルに緑のスラッシュとして重ねる。
 function buildBigRoad(hist) {
   const ROWS = 6;
   const cells = [];
   const occupied = new Set(); // "row,col"
   let last = null;
+  let streakStartCol = 0; // 現在のストリークが始まった列
   let pendingTies = 0;
   const key = (r, c) => r + ',' + c;
 
@@ -716,12 +718,12 @@ function buildBigRoad(hist) {
       cells.push(cell);
       occupied.add(key(0, 0));
       last = cell;
+      streakStartCol = 0;
       pendingTies = 0;
     } else if (last.result === res) {
-      // 同じ結果 → まず真下を試す
+      // 同じ結果 → まず真下を試す。塞がっていれば同じ行で右へ（龍尾）
       let r = last.row + 1, c = last.col;
       if (r >= ROWS || occupied.has(key(r, c))) {
-        // dragon tail: 同じ行で右へ
         r = last.row;
         c = last.col + 1;
         while (occupied.has(key(r, c))) c++;
@@ -730,13 +732,17 @@ function buildBigRoad(hist) {
       cells.push(cell);
       occupied.add(key(r, c));
       last = cell;
+      // streakStartCol は据え置き
     } else {
-      // 結果が変わった → 次の列の最上段
-      const c = last.col + 1;
-      const cell = { row: 0, col: c, result: res, ties: 0 };
+      // 結果が変わった → ストリーク開始列の隣（streakStartCol + 1）の最上段
+      let r = 0, c = streakStartCol + 1;
+      // 万一そこが既に埋まっていれば右へずらす（防御的）
+      while (occupied.has(key(r, c))) c++;
+      const cell = { row: r, col: c, result: res, ties: 0 };
       cells.push(cell);
-      occupied.add(key(0, c));
+      occupied.add(key(r, c));
       last = cell;
+      streakStartCol = c;
     }
   }
   return cells;
