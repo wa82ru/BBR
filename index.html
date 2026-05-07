@@ -86,7 +86,19 @@ body::after {
   max-width: 520px;
   margin: 0 auto;
   padding: 0 20px 40px;
+  display: flex;
+  flex-direction: column;
 }
+/* デフォルトの並び順 */
+.wrapper > header        { order: 1; }
+.wrapper > .score-grid   { order: 2; }
+.wrapper > .shoe-info    { order: 3; }
+.wrapper > .section-controls { order: 4; }
+.wrapper > .divider      { order: 5; }
+.wrapper > .section-history  { order: 6; }
+/* レイアウト反転時：大路を上、操作部を下に */
+.wrapper.flipped > .section-history  { order: 4; }
+.wrapper.flipped > .section-controls { order: 6; }
 /* ── Header ── */
 header {
   display: flex;
@@ -115,23 +127,25 @@ header {
   color: var(--muted);
   margin-top: -2px;
 }
-#reset-btn {
+.header-btns { display: flex; gap: 8px; }
+#reset-btn, #swap-btn {
   background: transparent;
   border: 1px solid var(--border);
   color: var(--muted);
   font-family: 'DM Mono', monospace;
   font-size: 10px;
   letter-spacing: 2px;
-  padding: 7px 14px;
+  padding: 7px 12px;
   border-radius: 4px;
   cursor: pointer;
   transition: all 0.2s;
   text-transform: uppercase;
 }
-#reset-btn:hover {
+#reset-btn:hover, #swap-btn:hover {
   border-color: var(--gold-dim);
   color: var(--gold);
 }
+#swap-btn { padding: 7px 11px; font-size: 12px; }
 /* ── Score Panel ── */
 .score-grid {
   display: grid;
@@ -466,7 +480,10 @@ header {
       Baccarat
       <span>rhythm</span>
     </div>
-    <button id="reset-btn" onclick="resetGame()">↺ RESET</button>
+    <div class="header-btns">
+      <button id="swap-btn" onclick="toggleLayout()" title="操作部と大路を入れ替え">⇅</button>
+      <button id="reset-btn" onclick="resetGame()">↺ RESET</button>
+    </div>
   </header>
   <div class="score-grid">
     <div class="score-cell highlight">
@@ -492,38 +509,42 @@ header {
     <span><span id="shoe-cards">312</span> / 312</span>
     <div class="progress"><div id="shoeFill" style="width:100%"></div></div>
   </div>
-  <div id="flash-wrap">
-    <div id="flash"></div>
-  </div>
-  <div class="btn-row">
-    <button class="bet-btn btn-p" onclick="hit('P')">
-      <span class="btn-icon">◈ P L A Y E R</span>
-      <span class="main">PLAYER</span>
-    </button>
-    <button class="bet-btn btn-t" onclick="hit('T')">
-      <span class="btn-icon">◈ T I E</span>
-      <span class="main">TIE</span>
-    </button>
-    <button class="bet-btn btn-b" onclick="hit('B')">
-      <span class="btn-icon">◈ B A N K E R</span>
-      <span class="main">BANKER</span>
-    </button>
-  </div>
-  <div class="odds-row">
-    <div class="odds-chip">1 : 1</div>
-    <div class="odds-chip">8 : 1</div>
-    <div class="odds-chip">1 : 1</div>
-  </div>
-  <div class="streak-wrap">
-    <div class="streak-label">Combo Streak</div>
-    <div class="streak-bar"><div class="streak-fill" id="streakFill" style="width:0%"></div></div>
+  <div class="section-controls">
+    <div id="flash-wrap">
+      <div id="flash"></div>
+    </div>
+    <div class="btn-row">
+      <button class="bet-btn btn-p" onclick="hit('P')">
+        <span class="btn-icon">◈ P L A Y E R</span>
+        <span class="main">PLAYER</span>
+      </button>
+      <button class="bet-btn btn-t" onclick="hit('T')">
+        <span class="btn-icon">◈ T I E</span>
+        <span class="main">TIE</span>
+      </button>
+      <button class="bet-btn btn-b" onclick="hit('B')">
+        <span class="btn-icon">◈ B A N K E R</span>
+        <span class="main">BANKER</span>
+      </button>
+    </div>
+    <div class="odds-row">
+      <div class="odds-chip">1 : 1</div>
+      <div class="odds-chip">8 : 1</div>
+      <div class="odds-chip">1 : 1</div>
+    </div>
+    <div class="streak-wrap">
+      <div class="streak-label">Combo Streak</div>
+      <div class="streak-bar"><div class="streak-fill" id="streakFill" style="width:0%"></div></div>
+    </div>
   </div>
   <div class="divider"></div>
-  <div class="history-header">
-    <div class="history-title">Big Road · 大路</div>
-    <div id="history-count">0 rounds</div>
+  <div class="section-history">
+    <div class="history-header">
+      <div class="history-title">Big Road · 大路</div>
+      <div id="history-count">0 rounds</div>
+    </div>
+    <div id="history"></div>
   </div>
-  <div id="history"></div>
 </div>
 <script>
 let score = 0, combo = 0, history = [], locked = false, current = null;
@@ -818,6 +839,17 @@ function resetGame() {
   document.getElementById('streakFill').style.width = '0%';
   setTimeout(next, 500);
 }
+// レイアウト切替
+function toggleLayout() {
+  const w = document.querySelector('.wrapper');
+  w.classList.toggle('flipped');
+  localStorage.setItem('baccarat_layout', w.classList.contains('flipped') ? 'flipped' : 'default');
+}
+// 起動時に前回のレイアウトを復元
+if (localStorage.getItem('baccarat_layout') === 'flipped') {
+  document.querySelector('.wrapper').classList.add('flipped');
+}
+
 update();
 newShoe(false);
 next();
