@@ -98,9 +98,11 @@ body::after {
 .wrapper > .section-controls { order: 4; }
 .wrapper > .divider      { order: 5; }
 .wrapper > .section-history  { order: 6; }
-/* レイアウト反転時：大路を上、操作部を下に */
+.wrapper > .section-stats    { order: 7; }
+/* レイアウト反転時：大路を上、操作部を下に。stats は常に最下部 */
 .wrapper.flipped > .section-history  { order: 4; }
 .wrapper.flipped > .section-controls { order: 6; }
+.wrapper.flipped > .section-stats    { order: 7; }
 /* ── Header ── */
 header {
   display: flex;
@@ -550,6 +552,145 @@ body.shake { animation: screenShake 0.55s ease-out; }
   opacity: 0.6;
 }
 
+/* ── Stats section（投票履歴・点数推移） ── */
+.section-stats { margin-top: 22px; }
+.stats-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 12px 14px 14px;
+  margin-bottom: 10px;
+}
+.stats-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 10px;
+}
+.stats-title {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+.stats-side {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--gold-dim);
+}
+#bet-list {
+  max-height: 240px;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  scroll-behavior: smooth;
+}
+#bet-list::-webkit-scrollbar { width: 4px; }
+#bet-list::-webkit-scrollbar-track { background: transparent; }
+#bet-list::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.2); border-radius: 2px; }
+.bet-list-empty {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  color: var(--gold-dim);
+  text-align: center;
+  padding: 36px 0;
+  letter-spacing: 4px;
+}
+.hist-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 7px 6px;
+  font-family: 'DM Mono', monospace;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+  border-bottom: 1px solid rgba(201,168,76,0.05);
+  flex-shrink: 0;
+}
+.hist-row:last-child { border-bottom: none; }
+.hist-row.new { animation: rowSlideIn 0.28s ease-out; }
+@keyframes rowSlideIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.hist-round {
+  font-size: 9px;
+  color: var(--gold-dim);
+  width: 30px;
+  text-align: right;
+  letter-spacing: 0;
+}
+.hist-bet {
+  display: inline-block;
+  width: 22px;
+  height: 18px;
+  line-height: 18px;
+  text-align: center;
+  border-radius: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  color: #fff;
+  letter-spacing: 0;
+}
+.hist-bet.b-p { background: var(--player); }
+.hist-bet.b-b { background: var(--banker); }
+.hist-bet.b-t { background: var(--tie); }
+.hist-arrow {
+  color: rgba(255,255,255,0.18);
+  font-size: 10px;
+}
+.hist-result {
+  width: 26px;
+  text-align: center;
+  font-size: 13px;
+}
+.hist-result.r-hit  { color: var(--gold-light); }
+.hist-result.r-miss { color: #e05c5c; }
+.hist-result.r-push { color: var(--tie-glow); }
+.hist-delta {
+  margin-left: auto;
+  font-size: 11px;
+  letter-spacing: 0.5px;
+}
+.hist-delta.d-gain { color: var(--gold-light); }
+.hist-delta.d-loss { color: #e05c5c; }
+.hist-delta.d-push { color: var(--muted); }
+
+/* スコアトレンド */
+#score-chart {
+  width: 100%;
+  height: 100px;
+  display: block;
+  margin-top: 4px;
+}
+.trend-current {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 18px;
+  letter-spacing: 1px;
+  color: var(--gold-light);
+}
+.trend-current.neg { color: #e05c5c; }
+.chart-stats {
+  display: flex;
+  gap: 16px;
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px solid rgba(201,168,76,0.06);
+  justify-content: space-around;
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  color: var(--muted);
+  letter-spacing: 1px;
+}
+.chart-stats b {
+  color: var(--gold-light);
+  font-weight: 400;
+  margin-left: 5px;
+}
+.chart-stats .neg { color: #e05c5c; }
+.chart-stats .sep { color: rgba(255,255,255,0.15); margin: 0 1px; }
+
 /* iPhone notch / safe area additional padding for body */
 @supports (padding: max(0px)) {
   .wrapper {
@@ -636,9 +777,37 @@ body.shake { animation: screenShake 0.55s ease-out; }
     </div>
     <div id="history"></div>
   </div>
+  <div class="section-stats">
+    <div class="stats-card">
+      <div class="stats-header">
+        <div class="stats-title">Bet · Result · 投票履歴</div>
+        <div class="stats-side" id="hist-rounds">0 rounds</div>
+      </div>
+      <div id="bet-list">
+        <div class="bet-list-empty">— start —</div>
+      </div>
+    </div>
+    <div class="stats-card">
+      <div class="stats-header">
+        <div class="stats-title">Score Trend · 点数推移</div>
+        <div id="trend-current" class="trend-current">0</div>
+      </div>
+      <svg id="score-chart" viewBox="0 0 320 100" preserveAspectRatio="none">
+        <line id="score-zero" x1="0" y1="92" x2="320" y2="92" stroke="rgba(201,168,76,0.18)" stroke-width="0.6" stroke-dasharray="2,3"/>
+        <polygon id="score-fill" points="" fill="rgba(201,168,76,0.10)"/>
+        <polyline id="score-line" points="" fill="none" stroke="#c9a84c" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <div class="chart-stats">
+        <div>HIT<b id="stat-hit">0</b><span class="sep">/</span><span id="stat-total">0</span></div>
+        <div>MAX<b id="stat-max">0</b></div>
+        <div>MIN<b id="stat-min" class="neg">0</b></div>
+      </div>
+    </div>
+  </div>
 </div>
 <script>
 let score = 0, combo = 0, history = [], locked = false, current = null;
+let userHistory = []; // {bet, result, outcome, delta, total}
 let best = Number(localStorage.getItem('baccarat_best') || 0);
 let bestCombo = Number(localStorage.getItem('baccarat_best_combo') || 0);
 const MAX_COMBO_BAR = 10;
@@ -817,13 +986,15 @@ function evaluate(input) {
   btn.classList.add('pressed');
   setTimeout(() => btn.classList.remove('pressed'), 200);
 
+  let outcome, delta;
   if (input === current) {
     // 当たり: ベット額 × 倍率
-    const profit = BET * PAYOUT[current];
-    score += profit;
+    delta = BET * PAYOUT[current];
+    outcome = 'HIT';
+    score += delta;
     combo++;
     if (current === 'T') {
-      showFlash('+' + profit, 'hit');
+      showFlash('+' + delta, 'hit');
       vibrate([0, 25, 30, 25, 30, 40]);
     } else {
       showFlash('HIT', 'hit');
@@ -831,11 +1002,15 @@ function evaluate(input) {
     }
   } else if (current === 'T' && (input === 'P' || input === 'B')) {
     // プッシュ: P/Bに賭けてTie結果が出た → 賭け金返却。スコア変動なし、コンボは維持
+    delta = 0;
+    outcome = 'PUSH';
     showFlash('PUSH', 'tie');
     vibrate(20);
   } else {
     // 外れ: ベット額没収
-    score -= BET;
+    delta = -BET;
+    outcome = 'MISS';
+    score += delta;
     combo = 0;
     showFlash('MISS', 'miss');
     vibrate([0, 30, 40, 30]);
@@ -843,11 +1018,13 @@ function evaluate(input) {
   if (score > best) { best = score; localStorage.setItem('baccarat_best', best); }
   if (combo > bestCombo) { bestCombo = combo; localStorage.setItem('baccarat_best_combo', bestCombo); }
   history.push(current);
+  userHistory.push({ bet: input, result: current, outcome, delta, total: score });
   // 節目イベント（深いエンゲージメント指標）
   if (!install100Tracked && history.length === 100) { install100Tracked = true; trackEvent('rounds-100'); }
   if (!install500Tracked && history.length === 500) { install500Tracked = true; trackEvent('rounds-500'); }
   update();
   renderHistory();
+  renderStats();
 
   setTimeout(() => {
     next();
@@ -975,13 +1152,122 @@ function renderHistory() {
   // 右端まで自動スクロール
   requestAnimationFrame(() => { el.scrollLeft = el.scrollWidth; });
 }
+// === 投票履歴・点数推移の描画 ===
+function renderStats() {
+  renderBetList();
+  renderScoreChart();
+  renderChartStats();
+}
+
+function renderBetList() {
+  const el = document.getElementById('bet-list');
+  document.getElementById('hist-rounds').textContent = userHistory.length + ' rounds';
+  if (userHistory.length === 0) {
+    el.innerHTML = '<div class="bet-list-empty">— start —</div>';
+    return;
+  }
+  // 直近200ラウンドだけ描画（古いのは見たければスクロール、ただし軽量化のためカット）
+  const showFrom = Math.max(0, userHistory.length - 200);
+  el.innerHTML = '';
+  const glyph = { HIT: '▲', MISS: '✕', PUSH: '≈' };
+  for (let i = showFrom; i < userHistory.length; i++) {
+    const d = userHistory[i];
+    const row = document.createElement('div');
+    row.className = 'hist-row';
+    if (i === userHistory.length - 1) row.classList.add('new');
+
+    const round = document.createElement('span');
+    round.className = 'hist-round';
+    round.textContent = '#' + (i + 1);
+
+    const bet = document.createElement('span');
+    bet.className = 'hist-bet b-' + d.bet.toLowerCase();
+    bet.textContent = d.bet;
+
+    const arrow = document.createElement('span');
+    arrow.className = 'hist-arrow';
+    arrow.textContent = '→';
+
+    const result = document.createElement('span');
+    result.className = 'hist-result r-' + d.outcome.toLowerCase();
+    result.textContent = glyph[d.outcome];
+
+    const delta = document.createElement('span');
+    let cls = 'hist-delta ';
+    if (d.delta > 0) cls += 'd-gain';
+    else if (d.delta < 0) cls += 'd-loss';
+    else cls += 'd-push';
+    delta.className = cls;
+    delta.textContent = d.delta === 0 ? '±0' : (d.delta > 0 ? '+' : '') + d.delta;
+
+    row.append(round, bet, arrow, result, delta);
+    el.appendChild(row);
+  }
+  // 最新が下端 → 最下部までスクロール
+  requestAnimationFrame(() => { el.scrollTop = el.scrollHeight; });
+}
+
+function renderScoreChart() {
+  const W = 320, H = 100, padX = 6, padY = 8;
+  const drawW = W - padX * 2;
+  const drawH = H - padY * 2;
+  const fillEl = document.getElementById('score-fill');
+  const lineEl = document.getElementById('score-line');
+  const zeroEl = document.getElementById('score-zero');
+  const trendEl = document.getElementById('trend-current');
+
+  if (userHistory.length === 0) {
+    fillEl.setAttribute('points', '');
+    lineEl.setAttribute('points', '');
+    const baseY = (padY + drawH).toFixed(1);
+    zeroEl.setAttribute('y1', baseY);
+    zeroEl.setAttribute('y2', baseY);
+    trendEl.textContent = '0';
+    trendEl.classList.remove('neg');
+    return;
+  }
+  // 折れ線は直近120ラウンドだけ表示（圧縮しすぎず読めるように）
+  const data = userHistory.slice(-120);
+  const scores = data.map(d => d.total);
+  const minS = Math.min(0, ...scores);
+  const maxS = Math.max(0, ...scores);
+  const range = (maxS - minS) || 100;
+
+  const xs = data.map((_, i) => padX + (data.length === 1 ? drawW / 2 : (i / (data.length - 1)) * drawW));
+  const ys = data.map(d => padY + drawH - ((d.total - minS) / range) * drawH);
+  const points = xs.map((x, i) => x.toFixed(1) + ',' + ys[i].toFixed(1)).join(' ');
+  const baseY = padY + drawH - ((0 - minS) / range) * drawH;
+  const fillPoints = xs[0].toFixed(1) + ',' + baseY.toFixed(1) + ' ' + points + ' ' + xs[xs.length - 1].toFixed(1) + ',' + baseY.toFixed(1);
+
+  lineEl.setAttribute('points', points);
+  fillEl.setAttribute('points', fillPoints);
+  zeroEl.setAttribute('y1', baseY.toFixed(1));
+  zeroEl.setAttribute('y2', baseY.toFixed(1));
+
+  const cur = scores[scores.length - 1];
+  trendEl.textContent = (cur > 0 ? '+' : '') + cur.toLocaleString();
+  trendEl.classList.toggle('neg', cur < 0);
+}
+
+function renderChartStats() {
+  const total = userHistory.length;
+  const hits = userHistory.filter(d => d.outcome === 'HIT').length;
+  const max = userHistory.length ? Math.max(0, ...userHistory.map(d => d.total)) : 0;
+  const min = userHistory.length ? Math.min(0, ...userHistory.map(d => d.total)) : 0;
+  document.getElementById('stat-hit').textContent = hits;
+  document.getElementById('stat-total').textContent = total;
+  document.getElementById('stat-max').textContent = (max > 0 ? '+' : '') + max.toLocaleString();
+  document.getElementById('stat-min').textContent = min < 0 ? min.toLocaleString() : '0';
+}
+
 function resetGame() {
   score = 0; combo = 0; history = []; locked = false; current = null;
+  userHistory = [];
   shoeNumber = 0;
   inputQueue.length = 0;
   if (flashTimer) { clearTimeout(flashTimer); flashTimer = null; }
   newShoe(false);
-  update(); renderHistory();
+  update(); renderHistory(); renderStats();
   document.getElementById('flash').className = '';
   document.getElementById('streakFill').style.width = '0%';
   setTimeout(next, 500);
@@ -999,6 +1285,7 @@ if (localStorage.getItem('baccarat_layout') === 'flipped') {
 
 update();
 newShoe(false);
+renderStats();
 next();
 // PWA
 if ('serviceWorker' in navigator) {
