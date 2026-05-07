@@ -465,6 +465,70 @@ header {
 }
 .bump { animation: scoreBump 0.3s ease-out; }
 
+/* ── New Shoe バナー ── */
+#shoe-banner {
+  position: fixed;
+  top: 38%;
+  left: 50%;
+  transform: translate(-50%, -50%) scale(0.85);
+  z-index: 200;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s cubic-bezier(0.34,1.2,0.64,1),
+              transform 0.45s cubic-bezier(0.34,1.4,0.64,1);
+  text-align: center;
+  padding: 22px 44px 18px;
+  background: linear-gradient(135deg, rgba(15,15,20,0.92), rgba(28,22,12,0.92));
+  border: 1px solid var(--gold);
+  border-radius: 10px;
+  box-shadow:
+    0 0 0 1px rgba(232,201,122,0.15),
+    0 16px 50px rgba(0,0,0,0.6),
+    0 0 70px rgba(201,168,76,0.35);
+  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px);
+}
+#shoe-banner.show {
+  opacity: 1;
+  transform: translate(-50%, -50%) scale(1);
+}
+#shoe-banner .sb-main {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 46px;
+  letter-spacing: 10px;
+  background: linear-gradient(135deg, #fff5d6 10%, var(--gold-light) 40%, var(--gold) 70%, var(--gold-dim));
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  line-height: 1;
+  text-shadow: 0 0 30px rgba(232,201,122,0.4);
+  padding-right: 10px; /* offset letter-spacing */
+}
+#shoe-banner .sb-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 4px;
+  color: var(--muted);
+  margin-top: 10px;
+  text-transform: uppercase;
+}
+#shoe-banner .sb-sub b {
+  color: var(--gold-light);
+  font-weight: 400;
+  margin: 0 4px;
+}
+/* バナー下のかすかなライン演出 */
+#shoe-banner::before {
+  content: '';
+  position: absolute;
+  left: 20%;
+  right: 20%;
+  bottom: 8px;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--gold-light), transparent);
+  opacity: 0.6;
+}
+
 /* iPhone notch / safe area additional padding for body */
 @supports (padding: max(0px)) {
   .wrapper {
@@ -476,6 +540,10 @@ header {
 </style>
 </head>
 <body>
+<div id="shoe-banner">
+  <div class="sb-main">NEW SHOE</div>
+  <div class="sb-sub">SHOE <b id="sb-num">2</b>·<b>312</b>CARDS</div>
+</div>
 <div class="wrapper">
   <header>
     <div class="logo">
@@ -608,7 +676,24 @@ function newShoe(flash = false) {
     const info = document.getElementById('shoe-info');
     info.classList.add('flash');
     setTimeout(() => info.classList.remove('flash'), 800);
+    showShoeBanner();
+    if (typeof trackEvent === 'function') trackEvent('new-shoe');
   }
+}
+
+let shoeBannerTimer = null;
+function showShoeBanner() {
+  const el = document.getElementById('shoe-banner');
+  document.getElementById('sb-num').textContent = shoeNumber;
+  if (shoeBannerTimer) clearTimeout(shoeBannerTimer);
+  el.classList.remove('show');
+  void el.offsetWidth;
+  el.classList.add('show');
+  vibrate([0, 30, 60, 30, 60, 50]);
+  shoeBannerTimer = setTimeout(() => {
+    el.classList.remove('show');
+    shoeBannerTimer = null;
+  }, 1500);
 }
 
 function dealHand() {
