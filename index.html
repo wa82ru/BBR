@@ -14,6 +14,8 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Bebas+Neue&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<!-- GoatCounter アクセス解析（PV、地域、リファラ） -->
+<script data-goatcounter="https://countb.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 <style>
 :root {
   --gold: #c9a84c;
@@ -552,6 +554,23 @@ let best = Number(localStorage.getItem('baccarat_best') || 0);
 let bestCombo = Number(localStorage.getItem('baccarat_best_combo') || 0);
 const MAX_COMBO_BAR = 10;
 
+// === GoatCounter カスタムイベント ===
+function trackEvent(name) {
+  if (window.goatcounter && window.goatcounter.count) {
+    try { window.goatcounter.count({ path: name, event: true }); } catch(e) {}
+  }
+}
+let firstTapTracked = false;
+let install100Tracked = false, install500Tracked = false;
+// PWAとして起動されたかを判定して送る（最初の1回だけ）
+window.addEventListener('load', () => {
+  const isStandalone = window.matchMedia('(display-mode: standalone)').matches
+    || window.navigator.standalone === true;
+  setTimeout(() => trackEvent(isStandalone ? 'launch-pwa' : 'launch-browser'), 800);
+});
+// インストール完了イベント（Android Chrome等で発火、iOS非対応）
+window.addEventListener('appinstalled', () => trackEvent('pwa-installed'));
+
 // === Bet & payout config ===
 const BET = 100;
 const PAYOUT = { B: 1, P: 1, T: 8 }; // 1倍 = +100, 8倍 = +800
@@ -666,6 +685,7 @@ function hit(input) {
     return;
   }
   if (!current) return;
+  if (!firstTapTracked) { firstTapTracked = true; trackEvent('first-tap'); }
   evaluate(input);
 }
 
@@ -699,6 +719,9 @@ function evaluate(input) {
   if (score > best) { best = score; localStorage.setItem('baccarat_best', best); }
   if (combo > bestCombo) { bestCombo = combo; localStorage.setItem('baccarat_best_combo', bestCombo); }
   history.push(current);
+  // 節目イベント（深いエンゲージメント指標）
+  if (!install100Tracked && history.length === 100) { install100Tracked = true; trackEvent('rounds-100'); }
+  if (!install500Tracked && history.length === 500) { install500Tracked = true; trackEvent('rounds-500'); }
   update();
   renderHistory();
 
