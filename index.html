@@ -399,102 +399,6 @@ header {
   color: var(--gold-dim);
   letter-spacing: 4px;
 }
-
-/* ── 罫線トグル & 派生罫線 ── */
-.road-toggles {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 6px;
-  margin: 14px 0 12px;
-}
-.road-toggle {
-  font-family: 'DM Mono', monospace;
-  font-size: 10px;
-  letter-spacing: 1px;
-  padding: 8px 4px;
-  background: transparent;
-  border: 1px solid var(--border);
-  color: var(--muted);
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.2s;
-}
-.road-toggle:hover { border-color: var(--gold-dim); color: var(--gold); }
-.road-toggle.on {
-  background: rgba(201,168,76,0.08);
-  border-color: var(--gold-dim);
-  color: var(--gold-light);
-}
-.road-panel { display: none; margin-top: 12px; }
-.road-panel.show { display: block; }
-.road-panel .history-header { margin-bottom: 8px; }
-.road-grid {
-  --cell: 18px;
-  display: grid;
-  grid-template-rows: repeat(6, var(--cell));
-  grid-auto-flow: column;
-  grid-auto-columns: var(--cell);
-  gap: 1px;
-  padding: 6px;
-  background: #08080a;
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  overflow-x: auto;
-  overflow-y: hidden;
-  min-height: calc(var(--cell) * 6 + 14px);
-}
-.road-grid::-webkit-scrollbar { height: 4px; }
-.road-grid::-webkit-scrollbar-track { background: transparent; }
-.road-grid::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.2); border-radius: 2px; }
-
-/* 派生罫線セル（赤丸 / 青丸 ＝ 動きの一致 / 不一致） */
-.road-cell {
-  position: relative;
-  width: var(--cell);
-  height: var(--cell);
-}
-.road-cell::before {
-  content: '';
-  position: absolute;
-  inset: 3px;
-  border-radius: 50%;
-  background: currentColor;
-  box-shadow: 0 0 4px currentColor;
-}
-.road-cell.red  { color: var(--banker); }
-.road-cell.blue { color: var(--player); }
-.road-cell.new::before { animation: dotPop 0.3s cubic-bezier(0.34,1.56,0.64,1); }
-
-/* 珠盤路セル（B/P/T 全結果を順番に積む） */
-.bead-grid { --cell: 22px; }
-.bead-cell {
-  position: relative;
-  width: var(--cell);
-  height: var(--cell);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-.bead-cell::before {
-  content: '';
-  position: absolute;
-  inset: 2px;
-  border-radius: 50%;
-  background: currentColor;
-  box-shadow: 0 0 4px currentColor;
-}
-.bead-cell > span {
-  position: relative;
-  z-index: 1;
-  font-family: 'Bebas Neue', sans-serif;
-  font-size: 11px;
-  color: #fff;
-  letter-spacing: 0;
-}
-.bead-cell.b-b { color: var(--banker); }
-.bead-cell.b-p { color: var(--player); }
-.bead-cell.b-t { color: var(--tie); }
-.bead-cell.new::before { animation: dotPop 0.3s cubic-bezier(0.34,1.56,0.64,1); }
 /* ── Streak bar ── */
 .streak-wrap {
   margin: 20px 0 8px;
@@ -873,28 +777,6 @@ body.shake { animation: screenShake 0.55s ease-out; }
       <div id="history-count">0 rounds</div>
     </div>
     <div id="history"></div>
-    <div class="road-toggles">
-      <button class="road-toggle" data-road="dai-gan"  onclick="toggleRoad('dai-gan')">大眼仔</button>
-      <button class="road-toggle" data-road="shu-ro"   onclick="toggleRoad('shu-ro')">小路</button>
-      <button class="road-toggle" data-road="kacha-ro" onclick="toggleRoad('kacha-ro')">甲由路</button>
-      <button class="road-toggle" data-road="chu-pan"  onclick="toggleRoad('chu-pan')">珠盤路</button>
-    </div>
-    <div class="road-panel" id="panel-dai-gan">
-      <div class="history-header"><div class="history-title">Big Eye Boy · 大眼仔</div></div>
-      <div class="road-grid" id="road-dai-gan"></div>
-    </div>
-    <div class="road-panel" id="panel-shu-ro">
-      <div class="history-header"><div class="history-title">Small Road · 小路</div></div>
-      <div class="road-grid" id="road-shu-ro"></div>
-    </div>
-    <div class="road-panel" id="panel-kacha-ro">
-      <div class="history-header"><div class="history-title">Cockroach · 甲由路</div></div>
-      <div class="road-grid" id="road-kacha-ro"></div>
-    </div>
-    <div class="road-panel" id="panel-chu-pan">
-      <div class="history-header"><div class="history-title">Bead Plate · 珠盤路</div></div>
-      <div class="road-grid bead-grid" id="road-chu-pan"></div>
-    </div>
   </div>
   <div class="section-stats">
     <div class="stats-card">
@@ -927,7 +809,6 @@ body.shake { animation: screenShake 0.55s ease-out; }
 <script>
 let score = 0, combo = 0, history = [], locked = false, current = null;
 let userHistory = []; // {bet, result, outcome, delta, total}
-let bigRoadCells = []; // 派生罫線が参照する大路の現在状態
 let best = Number(localStorage.getItem('baccarat_best') || 0);
 let bestCombo = Number(localStorage.getItem('baccarat_best_combo') || 0);
 const MAX_COMBO_BAR = 10;
@@ -1240,186 +1121,37 @@ function renderHistory() {
   el.innerHTML = '';
   document.getElementById('history-count').textContent = history.length + ' rounds';
 
-  bigRoadCells = buildBigRoad(history);
-
-  if (bigRoadCells.length === 0) {
+  const cells = buildBigRoad(history);
+  if (cells.length === 0) {
     const placeholder = document.createElement('div');
     placeholder.className = 'br-empty';
     placeholder.textContent = '— start —';
     el.appendChild(placeholder);
-  } else {
-    bigRoadCells.forEach((c, idx) => {
-      const div = document.createElement('div');
-      div.className = 'br-cell br-' + c.result.toLowerCase();
-      div.style.gridRow = (c.row + 1);
-      div.style.gridColumn = (c.col + 1);
-      if (c.ties > 0) {
-        const slash = document.createElement('div');
-        slash.className = 'tie-slash';
-        div.appendChild(slash);
-        if (c.ties > 1) {
-          const num = document.createElement('div');
-          num.className = 'tie-num';
-          num.textContent = c.ties;
-          div.appendChild(num);
-        }
-      }
-      if (idx === bigRoadCells.length - 1) div.classList.add('new');
-      el.appendChild(div);
-    });
-    requestAnimationFrame(() => { el.scrollLeft = el.scrollWidth; });
-  }
-
-  // 派生罫線も同時に更新（表示中のみ）
-  renderAllDerivedRoads();
-}
-
-// === 派生罫線（大眼仔・小路・甲由路）===
-// 世界標準ルール（修正版リファレンス参照）：
-//   縦移動 at (col, row>0): (col-offset, row) が存在すれば赤、なければ青
-//   横移動 at (col, 0):     (col-offset, 1)   が存在すれば青、なければ赤
-function computeDerivedRoad(offset) {
-  const grid = {};
-  for (const e of bigRoadCells) grid[e.col + ',' + e.row] = true;
-
-  const ROWS = 6;
-  const cells = [];
-  const occupied = new Set();
-  let last = null;
-  let streakStartCol = 0;
-
-  for (let i = 0; i < bigRoadCells.length; i++) {
-    const e = bigRoadCells[i];
-    if (e.col < offset) continue;
-
-    // 大路の動き：直前のエントリと同じ結果なら縦、違えば横
-    const isVertical = i > 0 && bigRoadCells[i - 1].result === e.result;
-
-    // 色判定
-    let color;
-    if (isVertical) {
-      color = grid[(e.col - offset) + ',' + e.row] ? 'red' : 'blue';
-    } else {
-      color = grid[(e.col - offset) + ',1'] ? 'blue' : 'red';
-    }
-
-    // 派生罫線グリッドへ配置（大路と同じ縦下→龍尾右ルール、列換えは streakStartCol+1）
-    if (!last) {
-      const cell = { row: 0, col: 0, color };
-      cells.push(cell);
-      occupied.add('0,0');
-      last = cell;
-      streakStartCol = 0;
-    } else if (last.color === color) {
-      let r = last.row + 1, c = last.col;
-      if (r >= ROWS || occupied.has(r + ',' + c)) {
-        r = last.row;
-        c = last.col + 1;
-        while (occupied.has(r + ',' + c)) c++;
-      }
-      const cell = { row: r, col: c, color };
-      cells.push(cell);
-      occupied.add(r + ',' + c);
-      last = cell;
-    } else {
-      let r = 0, c = streakStartCol + 1;
-      while (occupied.has(r + ',' + c)) c++;
-      const cell = { row: r, col: c, color };
-      cells.push(cell);
-      occupied.add(r + ',' + c);
-      last = cell;
-      streakStartCol = c;
-    }
-  }
-  return cells;
-}
-
-// === 珠盤路 ===
-// Tie 含む全結果を左上から縦に積む。6行埋まったら右の列。
-function computeBeadPlate() {
-  const cells = [];
-  let row = 0, col = 0;
-  for (const r of history) {
-    cells.push({ row, col, result: r });
-    row++;
-    if (row >= 6) { row = 0; col++; }
-  }
-  return cells;
-}
-
-function renderDerivedRoad(elId, offset) {
-  const el = document.getElementById(elId);
-  el.innerHTML = '';
-  const cells = computeDerivedRoad(offset);
-  if (cells.length === 0) {
-    const p = document.createElement('div');
-    p.className = 'br-empty';
-    p.textContent = '— —';
-    el.appendChild(p);
     return;
   }
+
   cells.forEach((c, idx) => {
     const div = document.createElement('div');
-    div.className = 'road-cell ' + c.color;
-    div.style.gridRow = c.row + 1;
-    div.style.gridColumn = c.col + 1;
+    div.className = 'br-cell br-' + c.result.toLowerCase();
+    div.style.gridRow = (c.row + 1);
+    div.style.gridColumn = (c.col + 1);
+    if (c.ties > 0) {
+      const slash = document.createElement('div');
+      slash.className = 'tie-slash';
+      div.appendChild(slash);
+      if (c.ties > 1) {
+        const num = document.createElement('div');
+        num.className = 'tie-num';
+        num.textContent = c.ties;
+        div.appendChild(num);
+      }
+    }
     if (idx === cells.length - 1) div.classList.add('new');
     el.appendChild(div);
   });
+
+  // 右端まで自動スクロール
   requestAnimationFrame(() => { el.scrollLeft = el.scrollWidth; });
-}
-
-function renderBeadPlate(elId) {
-  const el = document.getElementById(elId);
-  el.innerHTML = '';
-  const cells = computeBeadPlate();
-  if (cells.length === 0) {
-    const p = document.createElement('div');
-    p.className = 'br-empty';
-    p.textContent = '— —';
-    el.appendChild(p);
-    return;
-  }
-  cells.forEach((c, idx) => {
-    const div = document.createElement('div');
-    div.className = 'bead-cell b-' + c.result.toLowerCase();
-    const span = document.createElement('span');
-    span.textContent = c.result;
-    div.appendChild(span);
-    div.style.gridRow = c.row + 1;
-    div.style.gridColumn = c.col + 1;
-    if (idx === cells.length - 1) div.classList.add('new');
-    el.appendChild(div);
-  });
-  requestAnimationFrame(() => { el.scrollLeft = el.scrollWidth; });
-}
-
-function renderAllDerivedRoads() {
-  if (roadVisible['dai-gan'])  renderDerivedRoad('road-dai-gan', 1);
-  if (roadVisible['shu-ro'])   renderDerivedRoad('road-shu-ro', 2);
-  if (roadVisible['kacha-ro']) renderDerivedRoad('road-kacha-ro', 3);
-  if (roadVisible['chu-pan'])  renderBeadPlate('road-chu-pan');
-}
-
-// === 罫線トグル ===
-const ROAD_KEYS = ['dai-gan', 'shu-ro', 'kacha-ro', 'chu-pan'];
-const roadVisible = {};
-ROAD_KEYS.forEach(k => { roadVisible[k] = localStorage.getItem('road-' + k) === 'on'; });
-
-function applyRoadVisibility() {
-  ROAD_KEYS.forEach(k => {
-    const panel = document.getElementById('panel-' + k);
-    const btn = document.querySelector('.road-toggle[data-road="' + k + '"]');
-    if (panel) panel.classList.toggle('show', roadVisible[k]);
-    if (btn)   btn.classList.toggle('on', roadVisible[k]);
-  });
-}
-
-function toggleRoad(key) {
-  roadVisible[key] = !roadVisible[key];
-  localStorage.setItem('road-' + key, roadVisible[key] ? 'on' : 'off');
-  applyRoadVisibility();
-  if (roadVisible[key]) renderAllDerivedRoads();
 }
 // === 投票履歴・点数推移の描画 ===
 function renderStats() {
@@ -1555,7 +1287,6 @@ if (localStorage.getItem('baccarat_layout') === 'flipped') {
 update();
 newShoe(false);
 renderStats();
-applyRoadVisibility();
 next();
 // PWA
 if ('serviceWorker' in navigator) {
