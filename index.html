@@ -410,6 +410,94 @@ header {
   color: var(--gold-dim);
   letter-spacing: 4px;
 }
+/* ── Bet Wheel ── */
+.bet-wheel-wrap {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  margin: 4px 0 12px;
+}
+.bet-wheel-container {
+  position: relative;
+  height: 48px;
+  width: 130px;
+  overflow: hidden;
+}
+.bet-wheel-container::before,
+.bet-wheel-container::after {
+  content: '';
+  position: absolute;
+  left: 0; right: 0;
+  height: 14px;
+  z-index: 2;
+  pointer-events: none;
+}
+.bet-wheel-container::before {
+  top: 0;
+  background: linear-gradient(to bottom, var(--bg), transparent);
+}
+.bet-wheel-container::after {
+  bottom: 0;
+  background: linear-gradient(to top, var(--bg), transparent);
+}
+.bet-wheel {
+  height: 100%;
+  overflow-y: scroll;
+  scroll-snap-type: y mandatory;
+  -webkit-overflow-scrolling: touch;
+  scrollbar-width: none;
+}
+.bet-wheel::-webkit-scrollbar { display: none; }
+.bet-wheel-item {
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  scroll-snap-align: center;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  transition: color 0.2s;
+  cursor: pointer;
+}
+.bet-wheel-item.active { color: var(--gold-light); }
+.bet-wheel-label {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px;
+  letter-spacing: 2px;
+  color: var(--muted);
+  text-transform: uppercase;
+}
+/* ロック状態 */
+.bet-wheel-wrap.locked .bet-wheel { pointer-events: none; }
+.bet-wheel-wrap.locked .bet-wheel-item { color: rgba(255,255,255,0.15); }
+.bet-wheel-wrap.locked .bet-wheel-item.active { color: rgba(255,255,255,0.25); }
+.bet-unlock-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 7px 10px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+.bet-unlock-btn:hover { border-color: var(--gold-dim); }
+.bet-unlock-icon { font-size: 14px; }
+.bet-unlock-text {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  letter-spacing: 1px;
+  color: var(--muted);
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.bet-unlock-btn.hidden { display: none; }
 /* ── Streak bar ── */
 .streak-wrap {
   margin: 20px 0 8px;
@@ -754,6 +842,24 @@ body.shake { animation: screenShake 0.55s ease-out; }
     <div class="progress"><div id="shoeFill" style="width:100%"></div></div>
   </div>
   <div class="section-controls">
+    <div class="bet-wheel-wrap locked" id="bet-wheel-wrap">
+      <span class="bet-wheel-label">BET</span>
+      <div class="bet-wheel-container">
+        <div class="bet-wheel" id="bet-wheel">
+          <div class="bet-wheel-item" data-value="100">100</div>
+          <div class="bet-wheel-item active" data-value="100">100</div>
+          <div class="bet-wheel-item" data-value="200">200</div>
+          <div class="bet-wheel-item" data-value="300">300</div>
+          <div class="bet-wheel-item" data-value="400">400</div>
+          <div class="bet-wheel-item" data-value="500">500</div>
+          <div class="bet-wheel-item" data-value="500">500</div>
+        </div>
+      </div>
+      <button class="bet-unlock-btn" id="bet-unlock-btn" onclick="showUnlockOptions()">
+        <span class="bet-unlock-icon">🔒</span>
+        <span class="bet-unlock-text">UNLOCK</span>
+      </button>
+    </div>
     <div id="flash-wrap">
       <div id="flash"></div>
     </div>
@@ -836,6 +942,7 @@ let install100Tracked = false, install500Tracked = false;
 // PWAとして起動されたかを判定して送る（最初の1回だけ）
 window.addEventListener('load', () => {
   loadAd();
+  initBetWheel();
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches
     || window.navigator.standalone === true;
   setTimeout(() => trackEvent(isStandalone ? 'launch-pwa' : 'launch-browser'), 800);
@@ -844,8 +951,126 @@ window.addEventListener('load', () => {
 window.addEventListener('appinstalled', () => trackEvent('pwa-installed'));
 
 // === Bet & payout config ===
-const BET = 100;
+let currentBet = 100;
+const BET_OPTIONS = [100, 200, 300, 400, 500];
 const PAYOUT = { B: 1, P: 1, T: 8 }; // 1倍 = +100, 8倍 = +800
+
+// === Bet Wheel ===
+let betUnlocked = localStorage.getItem('bet_unlocked') === 'true';
+
+function initBetWheel() {
+  const wheel = document.getElementById('bet-wheel');
+  const wrap = document.getElementById('bet-wheel-wrap');
+  const unlockBtn = document.getElementById('bet-unlock-btn');
+
+  if (betUnlocked) {
+    wrap.classList.remove('locked');
+    unlockBtn.classList.add('hidden');
+  }
+
+  // scroll snap でアクティブ項目を検出
+  wheel.addEventListener('scroll', () => {
+    const itemH = 48;
+    const idx = Math.round(wheel.scrollTop / itemH);
+    // items[0] と items[6] はダミー（上下パディング用）なので idx+1 が実項目
+    const realIdx = Math.min(Math.max(idx, 0), BET_OPTIONS.length - 1);
+    currentBet = BET_OPTIONS[realIdx];
+    document.querySelectorAll('.bet-wheel-item').forEach((el, i) => {
+      el.classList.toggle('active', i === realIdx + 1);
+    });
+  }, { passive: true });
+
+  // 初期位置を100（先頭）に設定
+  wheel.scrollTop = 0;
+}
+
+function showUnlockOptions() {
+  // シートを表示してシェアか実績アンロックを選ばせる
+  const sheet = document.createElement('div');
+  sheet.id = 'unlock-sheet';
+  sheet.style.cssText = `
+    position:fixed;inset:0;z-index:9999;
+    background:rgba(0,0,0,0.75);
+    display:flex;align-items:flex-end;justify-content:center;
+  `;
+  sheet.innerHTML = `
+    <div style="
+      background:#18181f;border-radius:18px 18px 0 0;
+      padding:28px 24px 40px;width:100%;max-width:520px;
+      border-top:1px solid rgba(201,168,76,0.2);
+    ">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:#e8c97a;margin-bottom:6px;">UNLOCK BET WHEEL</div>
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:#8a8070;letter-spacing:1px;margin-bottom:24px;">ベット額変更をアンロックする方法を選んでください</div>
+      <button onclick="unlockByShare()" style="
+        width:100%;padding:16px;margin-bottom:12px;
+        background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);
+        border-radius:10px;color:#e8c97a;font-family:'DM Mono',monospace;
+        font-size:11px;letter-spacing:2px;cursor:pointer;
+      ">📤 アプリをシェアしてアンロック</button>
+      <button onclick="checkAchievementUnlock()" style="
+        width:100%;padding:16px;margin-bottom:20px;
+        background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);
+        border-radius:10px;color:#e8c97a;font-family:'DM Mono',monospace;
+        font-size:11px;letter-spacing:2px;cursor:pointer;
+      ">🏆 コンボ10達成 or シュー3回でアンロック</button>
+      <button onclick="document.getElementById('unlock-sheet').remove()" style="
+        width:100%;padding:12px;
+        background:transparent;border:1px solid rgba(255,255,255,0.1);
+        border-radius:10px;color:#8a8070;font-family:'DM Mono',monospace;
+        font-size:10px;letter-spacing:2px;cursor:pointer;
+      ">キャンセル</button>
+    </div>
+  `;
+  document.body.appendChild(sheet);
+  sheet.addEventListener('click', e => { if (e.target === sheet) sheet.remove(); });
+}
+
+function unlockByShare() {
+  const sheet = document.getElementById('unlock-sheet');
+  if (navigator.share) {
+    navigator.share({
+      title: 'Baccarat Rhythm',
+      text: '6デッキのリアルなシューでバカラの流れを読む練習ができるアプリ。無料・インストール不要。',
+      url: 'https://iminonai.com'
+    }).then(() => {
+      sheet?.remove();
+      unlockBetWheel();
+    }).catch(() => {});
+  } else {
+    // Web Share API 非対応ブラウザはクリップボードにコピー
+    navigator.clipboard?.writeText('https://iminonai.com').then(() => {
+      sheet?.remove();
+      unlockBetWheel();
+    });
+  }
+}
+
+function checkAchievementUnlock() {
+  const sheet = document.getElementById('unlock-sheet');
+  if (bestCombo >= 10 || shoeNumber >= 3) {
+    sheet?.remove();
+    unlockBetWheel();
+  } else {
+    const remaining = [];
+    if (bestCombo < 10) remaining.push(`コンボ ${bestCombo}/10`);
+    if (shoeNumber < 3) remaining.push(`シュー ${shoeNumber}/3`);
+    alert('まだ条件を達成していません\n' + remaining.join('  /  '));
+  }
+}
+
+function unlockBetWheel() {
+  betUnlocked = true;
+  localStorage.setItem('bet_unlocked', 'true');
+  const wrap = document.getElementById('bet-wheel-wrap');
+  const unlockBtn = document.getElementById('bet-unlock-btn');
+  wrap.classList.remove('locked');
+  unlockBtn.classList.add('hidden');
+  // アンロック演出
+  wrap.style.transition = 'opacity 0.3s';
+  wrap.style.opacity = '0.4';
+  setTimeout(() => { wrap.style.opacity = '1'; }, 300);
+  if (typeof trackEvent === 'function') trackEvent('bet-unlocked');
+}
 
 // === Shoe (6デック=312枚) ===
 const NUM_DECKS = 6;
@@ -1014,7 +1239,7 @@ function evaluate(input) {
   let outcome, delta;
   if (input === current) {
     // 当たり: ベット額 × 倍率
-    delta = BET * PAYOUT[current];
+    delta = currentBet * PAYOUT[current];
     outcome = 'HIT';
     score += delta;
     combo++;
@@ -1033,7 +1258,7 @@ function evaluate(input) {
     vibrate(20);
   } else {
     // 外れ: ベット額没収
-    delta = -BET;
+    delta = -currentBet;
     outcome = 'MISS';
     score += delta;
     combo = 0;
