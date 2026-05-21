@@ -1,0 +1,10 @@
+[{
+  "relation": ["delegate_permission/common.handle_all_urls"],
+  "target": {
+    "namespace": "android_app",
+    "package_name": "com.iminonai.twa",
+    "sha256_cert_fingerprints": [
+      "14:D9:DF:6C:7D:FA:20:6F:9D:8A:2A:66:37:CE:92:54:1B:29:0A:5F:06:DE:7B:69:0D:BC:FF:99:1F:FE:0F:00"
+    ]
+  }
+}]
