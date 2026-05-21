@@ -833,6 +833,7 @@ body.shake { animation: screenShake 0.55s ease-out; }
   }
 }
 </style>
+<script>(function(s){s.dataset.zone='11035792',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 </head>
 <body>
 <div id="shoe-banner">
@@ -892,6 +893,7 @@ body.shake { animation: screenShake 0.55s ease-out; }
         <span class="main">BANKER</span>
       </button>
     </div>
+    <div id="ad-banner" style="text-align:center; padding:6px 0; min-height:58px;"></div>
     <div class="odds-row">
       <div class="odds-chip">1 : 1</div>
       <div class="odds-chip">8 : 1</div>
@@ -1045,7 +1047,18 @@ function newShoe(flash = false) {
     setTimeout(() => info.classList.remove('flash'), 800);
     showShoeBanner();
     if (typeof trackEvent === 'function') trackEvent('new-shoe');
+    loadAd();
   }
+}
+
+function loadAd() {
+  const container = document.getElementById('ad-banner');
+  if (!container) return;
+  container.innerHTML = '';
+  const s = document.createElement('script');
+  s.dataset.zone = '11035792';
+  s.src = 'https://nap5k.com/tag.min.js';
+  container.appendChild(s);
 }
 
 let shoeBannerTimer = null;
