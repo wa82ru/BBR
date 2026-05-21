@@ -956,6 +956,7 @@ const BET_OPTIONS = [100, 200, 300, 400, 500];
 const PAYOUT = { B: 1, P: 1, T: 8 }; // 1倍 = +100, 8倍 = +800
 
 // === Bet Wheel ===
+const UNLOCK_DELAY_MS = 24 * 60 * 60 * 1000; // 24時間
 let betUnlocked = localStorage.getItem('bet_unlocked') === 'true';
 
 function initBetWheel() {
@@ -963,16 +964,23 @@ function initBetWheel() {
   const wrap = document.getElementById('bet-wheel-wrap');
   const unlockBtn = document.getElementById('bet-unlock-btn');
 
+  // シェア済みで24時間経過していればアンロック
+  if (!betUnlocked) {
+    const shareTime = Number(localStorage.getItem('bet_share_time') || 0);
+    if (shareTime && Date.now() - shareTime >= UNLOCK_DELAY_MS) {
+      betUnlocked = true;
+      localStorage.setItem('bet_unlocked', 'true');
+    }
+  }
+
   if (betUnlocked) {
     wrap.classList.remove('locked');
     unlockBtn.classList.add('hidden');
   }
 
-  // scroll snap でアクティブ項目を検出
   wheel.addEventListener('scroll', () => {
     const itemH = 48;
     const idx = Math.round(wheel.scrollTop / itemH);
-    // items[0] と items[6] はダミー（上下パディング用）なので idx+1 が実項目
     const realIdx = Math.min(Math.max(idx, 0), BET_OPTIONS.length - 1);
     currentBet = BET_OPTIONS[realIdx];
     document.querySelectorAll('.bet-wheel-item').forEach((el, i) => {
@@ -980,12 +988,46 @@ function initBetWheel() {
     });
   }, { passive: true });
 
-  // 初期位置を100（先頭）に設定
   wheel.scrollTop = 0;
 }
 
+function shareCountdown() {
+  const shareTime = Number(localStorage.getItem('bet_share_time') || 0);
+  const remaining = UNLOCK_DELAY_MS - (Date.now() - shareTime);
+  const h = Math.floor(remaining / 3600000);
+  const m = Math.floor((remaining % 3600000) / 60000);
+  return `あと ${h}時間${m}分`;
+}
+
 function showUnlockOptions() {
-  // シートを表示してシェアか実績アンロックを選ばせる
+  const shareTime = Number(localStorage.getItem('bet_share_time') || 0);
+  const alreadyShared = shareTime > 0;
+  const shareReady = alreadyShared && Date.now() - shareTime >= UNLOCK_DELAY_MS;
+
+  let shareBlock = '';
+  if (shareReady) {
+    shareBlock = `<button onclick="unlockBetWheel();document.getElementById('unlock-sheet').remove()" style="
+      width:100%;padding:16px;margin-bottom:12px;
+      background:rgba(201,168,76,0.15);border:1px solid rgba(201,168,76,0.5);
+      border-radius:10px;color:#e8c97a;font-family:'DM Mono',monospace;
+      font-size:11px;letter-spacing:2px;cursor:pointer;
+    ">🔓 アンロック可能！タップして解除</button>`;
+  } else if (alreadyShared) {
+    shareBlock = `<div style="
+      width:100%;padding:16px;margin-bottom:12px;box-sizing:border-box;
+      background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.1);
+      border-radius:10px;text-align:center;
+      font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1px;color:#8a8070;
+    ">⏳ シェア済み — ${shareCountdown()}</div>`;
+  } else {
+    shareBlock = `<button onclick="unlockByShare()" style="
+      width:100%;padding:16px;margin-bottom:12px;
+      background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);
+      border-radius:10px;color:#e8c97a;font-family:'DM Mono',monospace;
+      font-size:11px;letter-spacing:2px;cursor:pointer;
+    ">📤 アプリをシェア → 24時間後にアンロック</button>`;
+  }
+
   const sheet = document.createElement('div');
   sheet.id = 'unlock-sheet';
   sheet.style.cssText = `
@@ -1001,12 +1043,7 @@ function showUnlockOptions() {
     ">
       <div style="font-family:'Bebas Neue',sans-serif;font-size:22px;letter-spacing:3px;color:#e8c97a;margin-bottom:6px;">UNLOCK BET WHEEL</div>
       <div style="font-family:'DM Mono',monospace;font-size:10px;color:#8a8070;letter-spacing:1px;margin-bottom:24px;">ベット額変更をアンロックする方法を選んでください</div>
-      <button onclick="unlockByShare()" style="
-        width:100%;padding:16px;margin-bottom:12px;
-        background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);
-        border-radius:10px;color:#e8c97a;font-family:'DM Mono',monospace;
-        font-size:11px;letter-spacing:2px;cursor:pointer;
-      ">📤 アプリをシェアしてアンロック</button>
+      ${shareBlock}
       <button onclick="checkAchievementUnlock()" style="
         width:100%;padding:16px;margin-bottom:20px;
         background:rgba(201,168,76,0.08);border:1px solid rgba(201,168,76,0.3);
@@ -1026,22 +1063,20 @@ function showUnlockOptions() {
 }
 
 function unlockByShare() {
-  const sheet = document.getElementById('unlock-sheet');
+  const doShare = () => {
+    localStorage.setItem('bet_share_time', Date.now().toString());
+    document.getElementById('unlock-sheet')?.remove();
+    // シートを再描画してカウントダウン表示
+    showUnlockOptions();
+  };
   if (navigator.share) {
     navigator.share({
       title: 'Baccarat Rhythm',
       text: '6デッキのリアルなシューでバカラの流れを読む練習ができるアプリ。無料・インストール不要。',
       url: 'https://iminonai.com'
-    }).then(() => {
-      sheet?.remove();
-      unlockBetWheel();
-    }).catch(() => {});
+    }).then(doShare).catch(() => {});
   } else {
-    // Web Share API 非対応ブラウザはクリップボードにコピー
-    navigator.clipboard?.writeText('https://iminonai.com').then(() => {
-      sheet?.remove();
-      unlockBetWheel();
-    });
+    navigator.clipboard?.writeText('https://iminonai.com').then(doShare);
   }
 }
 
@@ -1065,7 +1100,6 @@ function unlockBetWheel() {
   const unlockBtn = document.getElementById('bet-unlock-btn');
   wrap.classList.remove('locked');
   unlockBtn.classList.add('hidden');
-  // アンロック演出
   wrap.style.transition = 'opacity 0.3s';
   wrap.style.opacity = '0.4';
   setTimeout(() => { wrap.style.opacity = '1'; }, 300);
