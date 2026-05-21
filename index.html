@@ -702,7 +702,6 @@ body.shake { animation: screenShake 0.55s ease-out; }
   }
 }
 </style>
-<script>(function(s){s.dataset.zone='11035792',s.src='https://nap5k.com/tag.min.js'})([document.documentElement, document.body].filter(Boolean).pop().appendChild(document.createElement('script')))</script>
 </head>
 <body>
 <div id="shoe-banner">
@@ -826,6 +825,7 @@ let firstTapTracked = false;
 let install100Tracked = false, install500Tracked = false;
 // PWAとして起動されたかを判定して送る（最初の1回だけ）
 window.addEventListener('load', () => {
+  loadAd();
   const isStandalone = window.matchMedia('(display-mode: standalone)').matches
     || window.navigator.standalone === true;
   setTimeout(() => trackEvent(isStandalone ? 'launch-pwa' : 'launch-browser'), 800);
