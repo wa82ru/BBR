@@ -791,6 +791,27 @@ body.shake { animation: screenShake 0.55s ease-out; }
 .chart-stats .neg { color: #e05c5c; }
 .chart-stats .sep { color: rgba(255,255,255,0.15); margin: 0 1px; }
 
+/* ── Button score display ── */
+.btn-score {
+  display: block;
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px;
+  letter-spacing: 2px;
+  line-height: 1;
+  margin: 4px 0 2px;
+  opacity: 0;
+  transform: scale(0.8) translateY(3px);
+  transition: opacity 0.12s, transform 0.12s;
+  position: relative;
+  z-index: 1;
+}
+.btn-score.show {
+  opacity: 1;
+  transform: scale(1) translateY(0);
+}
+.btn-p .btn-score { color: var(--player-glow); text-shadow: 0 0 16px rgba(90,179,245,0.6); }
+.btn-b .btn-score { color: var(--banker-glow); text-shadow: 0 0 16px rgba(255,107,91,0.6); }
+
 /* iPhone notch / safe area additional padding for body */
 @supports (padding: max(0px)) {
   .wrapper {
@@ -866,6 +887,7 @@ body.shake { animation: screenShake 0.55s ease-out; }
     <div class="btn-row">
       <button class="bet-btn btn-p" onclick="hit('P')">
         <span class="btn-icon">◈ P L A Y E R</span>
+        <span class="btn-score" id="score-p"></span>
         <span class="main">PLAYER</span>
       </button>
       <button class="bet-btn btn-t" onclick="hit('T')">
@@ -874,6 +896,7 @@ body.shake { animation: screenShake 0.55s ease-out; }
       </button>
       <button class="bet-btn btn-b" onclick="hit('B')">
         <span class="btn-icon">◈ B A N K E R</span>
+        <span class="btn-score" id="score-b"></span>
         <span class="main">BANKER</span>
       </button>
     </div>
@@ -930,6 +953,7 @@ let userHistory = []; // {bet, result, outcome, delta, total}
 let best = Number(localStorage.getItem('baccarat_best') || 0);
 let bestCombo = Number(localStorage.getItem('baccarat_best_combo') || 0);
 const MAX_COMBO_BAR = 10;
+let lastPTotal = null, lastBTotal = null;
 
 // === GoatCounter カスタムイベント ===
 function trackEvent(name) {
@@ -1224,9 +1248,8 @@ function dealHand() {
   }
 
   updateShoeUI();
-  if (pTotal > bTotal) return 'P';
-  if (bTotal > pTotal) return 'B';
-  return 'T';
+  const winner = pTotal > bTotal ? 'P' : bTotal > pTotal ? 'B' : 'T';
+  return { winner, pTotal, bTotal };
 }
 
 function updateShoeUI() {
@@ -1237,7 +1260,10 @@ function updateShoeUI() {
 }
 
 function next() {
-  current = dealHand();
+  const result = dealHand();
+  current = result.winner;
+  lastPTotal = result.pTotal;
+  lastBTotal = result.bTotal;
   locked = false;
 }
 
@@ -1299,6 +1325,7 @@ function evaluate(input) {
     showFlash('MISS', 'miss');
     vibrate([0, 30, 40, 30]);
   }
+  showBtnScores(lastPTotal, lastBTotal);
   if (score > best) { best = score; localStorage.setItem('baccarat_best', best); }
   if (combo > bestCombo) { bestCombo = combo; localStorage.setItem('baccarat_best_combo', bestCombo); }
   history.push(current);
@@ -1318,6 +1345,24 @@ function evaluate(input) {
       evaluate(q);
     }
   }, COOLDOWN_MS);
+}
+let scoreTimer = null;
+function showBtnScores(p, b) {
+  const elP = document.getElementById('score-p');
+  const elB = document.getElementById('score-b');
+  if (scoreTimer) clearTimeout(scoreTimer);
+  elP.textContent = p;
+  elB.textContent = b;
+  elP.classList.remove('show');
+  elB.classList.remove('show');
+  void elP.offsetWidth;
+  elP.classList.add('show');
+  elB.classList.add('show');
+  scoreTimer = setTimeout(() => {
+    elP.classList.remove('show');
+    elB.classList.remove('show');
+    scoreTimer = null;
+  }, 900);
 }
 let flashTimer = null;
 function showFlash(text, cls) {
@@ -1550,6 +1595,9 @@ function resetGame() {
   shoeNumber = 0;
   inputQueue.length = 0;
   if (flashTimer) { clearTimeout(flashTimer); flashTimer = null; }
+  if (scoreTimer) { clearTimeout(scoreTimer); scoreTimer = null; }
+  document.getElementById('score-p').classList.remove('show');
+  document.getElementById('score-b').classList.remove('show');
   newShoe(false);
   update(); renderHistory(); renderStats();
   document.getElementById('flash').className = '';
