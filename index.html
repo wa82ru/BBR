@@ -143,7 +143,7 @@ header {
   margin-top: -2px;
 }
 .header-btns { display: flex; gap: 8px; }
-#reset-btn, #swap-btn {
+#reset-btn, #swap-btn, #sound-btn {
   background: transparent;
   border: 1px solid var(--border);
   color: var(--muted);
@@ -156,11 +156,13 @@ header {
   transition: all 0.2s;
   text-transform: uppercase;
 }
-#reset-btn:hover, #swap-btn:hover {
+#reset-btn:hover, #swap-btn:hover, #sound-btn:hover {
   border-color: var(--gold-dim);
   color: var(--gold);
 }
 #swap-btn { padding: 7px 11px; font-size: 12px; }
+#sound-btn { padding: 7px 11px; font-size: 13px; }
+#sound-btn.muted { color: #444; border-color: #2a2a2a; }
 /* ── Score Panel ── */
 .score-grid {
   display: grid;
@@ -844,6 +846,7 @@ body.shake { animation: screenShake 0.55s ease-out; }
       <span>rhythm</span>
     </div>
     <div class="header-btns">
+      <button id="sound-btn" onclick="toggleSound()" title="サウンドON/OFF">🔊</button>
       <button id="swap-btn" onclick="toggleLayout()" title="操作部と大路を入れ替え">⇅</button>
       <button id="reset-btn" onclick="resetGame()">↺ RESET</button>
     </div>
@@ -975,7 +978,22 @@ async function loadSfx(name, url) {
     audioBuffers[name] = await audioCtx.decodeAudioData(ab);
   } catch(e) {}
 }
+let soundEnabled = localStorage.getItem('bbr_sound') !== 'off';
+function toggleSound() {
+  soundEnabled = !soundEnabled;
+  localStorage.setItem('bbr_sound', soundEnabled ? 'on' : 'off');
+  const btn = document.getElementById('sound-btn');
+  btn.textContent = soundEnabled ? '🔊' : '🔇';
+  btn.classList.toggle('muted', !soundEnabled);
+}
+// 初期状態を反映
+document.addEventListener('DOMContentLoaded', () => {
+  const btn = document.getElementById('sound-btn');
+  if (!soundEnabled) { btn.textContent = '🔇'; btn.classList.add('muted'); }
+});
+
 async function playSfx(name) {
+  if (!soundEnabled) return;
   const buf = audioBuffers[name];
   if (!buf) return;
   if (audioCtx.state === 'suspended') await audioCtx.resume();
