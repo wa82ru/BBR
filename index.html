@@ -506,6 +506,22 @@ header {
   width: 8px; height: 8px; border-radius: 50%;
   border: 1.5px solid currentColor;
 }
+.kr-slash {
+  width: 9px; height: 1.5px;
+  background: currentColor;
+  border-radius: 1px;
+  transform: rotate(-45deg);
+}
+.next-slash {
+  width: 7px; height: 1.5px;
+  background: currentColor;
+  border-radius: 1px;
+  transform: rotate(-45deg);
+  display: inline-block;
+  opacity: 0.2;
+}
+.next-slash.nd-red { color: var(--banker-glow); opacity: 1; }
+.next-slash.nd-blue { color: var(--player-glow); opacity: 1; }
 .kr-red { color: var(--banker); }
 .kr-blue { color: var(--player); }
 #keisen-btn { padding: 7px 9px; font-size: 11px; letter-spacing: 1px; }
@@ -1107,13 +1123,13 @@ body.shake { animation: screenShake 0.55s ease-out; }
               <span class="next-lbl">B</span>
               <span class="next-dot" id="nd-b-1"></span>
               <span class="next-dot" id="nd-b-2"></span>
-              <span class="next-dot" id="nd-b-3"></span>
+              <span class="next-slash" id="nd-b-3"></span>
             </div>
             <div class="next-row">
               <span class="next-lbl">P</span>
               <span class="next-dot" id="nd-p-1"></span>
               <span class="next-dot" id="nd-p-2"></span>
-              <span class="next-dot" id="nd-p-3"></span>
+              <span class="next-slash" id="nd-p-3"></span>
             </div>
             <div class="next-row next-sublabels">
               <span></span>
@@ -1852,6 +1868,10 @@ function renderKrGrid(elId, cells, type) {
       bead.className = 'kr-bead kr-bead-' + c.result.toLowerCase();
       bead.textContent = c.result;
       cell.appendChild(bead);
+    } else if (type === 'cockroach') {
+      const slash = document.createElement('div');
+      slash.className = 'kr-slash ' + (c.red ? 'kr-red' : 'kr-blue');
+      cell.appendChild(slash);
     } else {
       const dot = document.createElement('div');
       dot.className = 'kr-dot ' + (c.red ? 'kr-red' : 'kr-blue');
@@ -1871,17 +1891,17 @@ function getNextDot(nextResult, offset) {
 
 function renderNextDots() {
   const pairs = [
-    ['nd-b-1', 'nd-p-1', 1],
-    ['nd-b-2', 'nd-p-2', 2],
-    ['nd-b-3', 'nd-p-3', 3],
+    ['nd-b-1', 'nd-p-1', 1, 'next-dot'],
+    ['nd-b-2', 'nd-p-2', 2, 'next-dot'],
+    ['nd-b-3', 'nd-p-3', 3, 'next-slash'],
   ];
-  for (const [bId, pId, offset] of pairs) {
+  for (const [bId, pId, offset, base] of pairs) {
     const bDot = document.getElementById(bId);
     const pDot = document.getElementById(pId);
     const bRed = getNextDot('B', offset);
     const pRed = getNextDot('P', offset);
-    bDot.className = 'next-dot' + (bRed === null ? '' : bRed ? ' nd-red' : ' nd-blue');
-    pDot.className = 'next-dot' + (pRed === null ? '' : pRed ? ' nd-red' : ' nd-blue');
+    bDot.className = base + (bRed === null ? '' : bRed ? ' nd-red' : ' nd-blue');
+    pDot.className = base + (pRed === null ? '' : pRed ? ' nd-red' : ' nd-blue');
   }
 }
 
@@ -1891,7 +1911,7 @@ function renderKeisen() {
   renderKrGrid('kr-bead',       buildBeadPlate(history), 'bead');
   renderKrGrid('kr-bigeye',     buildDerivedRoad(bigCells, 1), 'derived');
   renderKrGrid('kr-small',      buildDerivedRoad(bigCells, 2), 'derived');
-  renderKrGrid('kr-cockroach',  buildDerivedRoad(bigCells, 3), 'derived');
+  renderKrGrid('kr-cockroach',  buildDerivedRoad(bigCells, 3), 'cockroach');
   renderNextDots();
 }
 
