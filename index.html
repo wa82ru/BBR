@@ -964,9 +964,29 @@ let best = Number(localStorage.getItem('baccarat_best') || 0);
 let bestCombo = Number(localStorage.getItem('baccarat_best_combo') || 0);
 const MAX_COMBO_BAR = 10;
 let lastPTotal = null, lastBTotal = null, lastIsNatural = false;
-const sfxNatural9 = new Audio('naturalnine.mp3');
-const sfxNatural8 = new Audio('naturaleight.mp3');
-const sfxTie = new Audio('tie.mp3');
+
+// === Web Audio API（低遅延）===
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+const audioBuffers = {};
+async function loadSfx(name, url) {
+  try {
+    const res = await fetch(url);
+    const ab = await res.arrayBuffer();
+    audioBuffers[name] = await audioCtx.decodeAudioData(ab);
+  } catch(e) {}
+}
+function playSfx(name) {
+  const buf = audioBuffers[name];
+  if (!buf) return;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const src = audioCtx.createBufferSource();
+  src.buffer = buf;
+  src.connect(audioCtx.destination);
+  src.start(0);
+}
+loadSfx('natural9', 'naturalnine.mp3');
+loadSfx('natural8', 'naturaleight.mp3');
+loadSfx('tie', 'tie.mp3');
 
 // === GoatCounter カスタムイベント ===
 function trackEvent(name) {
@@ -1320,13 +1340,13 @@ function evaluate(input) {
     combo++;
     if (current === 'T') {
       showFlash('+' + delta, 'hit');
-      sfxTie.currentTime = 0; sfxTie.play().catch(() => {});
+      playSfx('tie');
       vibrate([0, 25, 30, 25, 30, 40]);
     } else {
       if (lastIsNatural) {
         const winTotal = input === 'P' ? lastPTotal : lastBTotal;
-        if (winTotal === 9) { sfxNatural9.currentTime = 0; sfxNatural9.play().catch(() => {}); }
-        else if (winTotal === 8) { sfxNatural8.currentTime = 0; sfxNatural8.play().catch(() => {}); }
+        if (winTotal === 9) { playSfx('natural9'); }
+        else if (winTotal === 8) { playSfx('natural8'); }
       }
       showFlash('HIT', 'hit');
       vibrate(15);
@@ -1335,7 +1355,7 @@ function evaluate(input) {
     // プッシュ: P/Bに賭けてTie結果が出た → 賭け金返却。スコア変動なし、コンボは維持
     delta = 0;
     outcome = 'PUSH';
-    sfxTie.currentTime = 0; sfxTie.play().catch(() => {});
+    playSfx('tie');
     showFlash('PUSH', 'tie');
     vibrate(20);
   } else {
