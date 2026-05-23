@@ -510,6 +510,52 @@ header {
 .kr-blue { color: var(--player); }
 #keisen-btn { padding: 7px 9px; font-size: 11px; letter-spacing: 1px; }
 #keisen-btn.active { color: var(--gold); border-color: var(--gold-dim); }
+/* NEXT パネル */
+.kr-bead-wrap { position: relative; }
+#kr-bead { padding-right: 52px; }
+#next-panel {
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 52px;
+  background: linear-gradient(to right, transparent, rgba(8,8,10,0.97) 32%);
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  padding: 6px 7px 6px 0;
+  pointer-events: none;
+}
+.next-row {
+  display: flex;
+  align-items: center;
+  gap: 3px;
+  justify-content: flex-end;
+}
+.next-lbl {
+  font-family: 'DM Mono', monospace;
+  font-size: 8px;
+  color: var(--muted);
+  width: 8px;
+  text-align: center;
+}
+.next-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  border: 1.5px solid currentColor;
+  display: inline-block;
+  opacity: 0.2;
+}
+.next-dot.nd-red { color: var(--banker-glow); opacity: 1; }
+.next-dot.nd-blue { color: var(--player-glow); opacity: 1; }
+.next-sublabels { gap: 3px; }
+.next-sub {
+  font-family: 'DM Mono', monospace;
+  font-size: 6px;
+  color: var(--muted);
+  width: 7px;
+  text-align: center;
+  opacity: 0.6;
+}
 /* ── Bet Wheel ── */
 .bet-wheel-wrap {
   position: relative;
@@ -1054,7 +1100,29 @@ body.shake { animation: screenShake 0.55s ease-out; }
     <div class="keisen-grid">
       <div class="keisen-panel">
         <div class="keisen-label">珠盤路 · BEAD</div>
-        <div class="kr-grid" id="kr-bead"></div>
+        <div class="kr-bead-wrap">
+          <div class="kr-grid" id="kr-bead"></div>
+          <div id="next-panel">
+            <div class="next-row">
+              <span class="next-lbl">B</span>
+              <span class="next-dot" id="nd-b-1"></span>
+              <span class="next-dot" id="nd-b-2"></span>
+              <span class="next-dot" id="nd-b-3"></span>
+            </div>
+            <div class="next-row">
+              <span class="next-lbl">P</span>
+              <span class="next-dot" id="nd-p-1"></span>
+              <span class="next-dot" id="nd-p-2"></span>
+              <span class="next-dot" id="nd-p-3"></span>
+            </div>
+            <div class="next-row next-sublabels">
+              <span></span>
+              <span class="next-sub">仔</span>
+              <span class="next-sub">小</span>
+              <span class="next-sub">甲</span>
+            </div>
+          </div>
+        </div>
       </div>
       <div class="keisen-panel">
         <div class="keisen-label">大眼仔 · BIG EYE</div>
@@ -1794,6 +1862,29 @@ function renderKrGrid(elId, cells, type) {
   requestAnimationFrame(() => { el.scrollLeft = el.scrollWidth; });
 }
 
+function getNextDot(nextResult, offset) {
+  const simBigCells = buildBigRoad([...history, nextResult]);
+  const simDerived = buildDerivedRoad(simBigCells, offset);
+  if (simDerived.length === 0) return null;
+  return simDerived[simDerived.length - 1].red;
+}
+
+function renderNextDots() {
+  const pairs = [
+    ['nd-b-1', 'nd-p-1', 1],
+    ['nd-b-2', 'nd-p-2', 2],
+    ['nd-b-3', 'nd-p-3', 3],
+  ];
+  for (const [bId, pId, offset] of pairs) {
+    const bDot = document.getElementById(bId);
+    const pDot = document.getElementById(pId);
+    const bRed = getNextDot('B', offset);
+    const pRed = getNextDot('P', offset);
+    bDot.className = 'next-dot' + (bRed === null ? '' : bRed ? ' nd-red' : ' nd-blue');
+    pDot.className = 'next-dot' + (pRed === null ? '' : pRed ? ' nd-red' : ' nd-blue');
+  }
+}
+
 function renderKeisen() {
   if (!keisenOpen) return;
   const bigCells = buildBigRoad(history);
@@ -1801,6 +1892,7 @@ function renderKeisen() {
   renderKrGrid('kr-bigeye',     buildDerivedRoad(bigCells, 1), 'derived');
   renderKrGrid('kr-small',      buildDerivedRoad(bigCells, 2), 'derived');
   renderKrGrid('kr-cockroach',  buildDerivedRoad(bigCells, 3), 'derived');
+  renderNextDots();
 }
 
 // === 投票履歴・点数推移の描画 ===
