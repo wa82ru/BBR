@@ -1508,7 +1508,7 @@ function renderBetList() {
   // 直近200ラウンドだけ描画（古いのは見たければスクロール、ただし軽量化のためカット）
   const showFrom = Math.max(0, userHistory.length - 200);
   el.innerHTML = '';
-  const glyph = { HIT: '▲', MISS: '✕', PUSH: '≈' };
+  const glyph = { HIT: '●', MISS: '✕', PUSH: 'ー' };
   for (let i = showFrom; i < userHistory.length; i++) {
     const d = userHistory[i];
     const row = document.createElement('div');
