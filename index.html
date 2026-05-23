@@ -963,7 +963,9 @@ let userHistory = []; // {bet, result, outcome, delta, total}
 let best = Number(localStorage.getItem('baccarat_best') || 0);
 let bestCombo = Number(localStorage.getItem('baccarat_best_combo') || 0);
 const MAX_COMBO_BAR = 10;
-let lastPTotal = null, lastBTotal = null;
+let lastPTotal = null, lastBTotal = null, lastIsNatural = false;
+const sfxNatural9 = new Audio('naturalnine.mp3');
+const sfxNatural8 = new Audio('naturaleight.mp3');
 
 // === GoatCounter カスタムイベント ===
 function trackEvent(name) {
@@ -1225,9 +1227,10 @@ function dealHand() {
   const p2 = shoe.pop(), b2 = shoe.pop();
   let pTotal = (p1 + p2) % 10;
   let bTotal = (b1 + b2) % 10;
+  const isNatural = pTotal >= 8 || bTotal >= 8;
 
   // ナチュラル（8 or 9）が出たら追加カードなし
-  if (pTotal < 8 && bTotal < 8) {
+  if (!isNatural) {
     let p3 = null;
     // プレイヤー第3カードルール: 0-5でヒット、6-7でスタンド
     if (pTotal <= 5) {
@@ -1259,7 +1262,7 @@ function dealHand() {
 
   updateShoeUI();
   const winner = pTotal > bTotal ? 'P' : bTotal > pTotal ? 'B' : 'T';
-  return { winner, pTotal, bTotal };
+  return { winner, pTotal, bTotal, isNatural };
 }
 
 function updateShoeUI() {
@@ -1274,6 +1277,7 @@ function next() {
   current = result.winner;
   lastPTotal = result.pTotal;
   lastBTotal = result.bTotal;
+  lastIsNatural = result.isNatural;
   locked = false;
 }
 
@@ -1336,6 +1340,11 @@ function evaluate(input) {
     vibrate([0, 30, 40, 30]);
   }
   showBtnScores(lastPTotal, lastBTotal);
+  if (outcome === 'HIT' && lastIsNatural && (input === 'P' || input === 'B')) {
+    const winTotal = input === 'P' ? lastPTotal : lastBTotal;
+    if (winTotal === 9) { sfxNatural9.currentTime = 0; sfxNatural9.play().catch(() => {}); }
+    else if (winTotal === 8) { sfxNatural8.currentTime = 0; sfxNatural8.play().catch(() => {}); }
+  }
   if (score > best) { best = score; localStorage.setItem('baccarat_best', best); }
   if (combo > bestCombo) { bestCombo = combo; localStorage.setItem('baccarat_best_combo', bestCombo); }
   history.push(current);
