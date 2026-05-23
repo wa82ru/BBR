@@ -975,10 +975,10 @@ async function loadSfx(name, url) {
     audioBuffers[name] = await audioCtx.decodeAudioData(ab);
   } catch(e) {}
 }
-function playSfx(name) {
+async function playSfx(name) {
   const buf = audioBuffers[name];
   if (!buf) return;
-  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if (audioCtx.state === 'suspended') await audioCtx.resume();
   const src = audioCtx.createBufferSource();
   src.buffer = buf;
   src.connect(audioCtx.destination);
