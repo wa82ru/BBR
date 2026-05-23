@@ -340,7 +340,7 @@ header {
   grid-auto-flow: column;
   grid-auto-columns: var(--cell);
   gap: 1px;
-  padding: 6px;
+  padding: 6px 112px 6px 6px;
   background: #08080a;
   border: 1px solid var(--border);
   border-radius: 6px;
@@ -349,6 +349,38 @@ header {
   scroll-behavior: smooth;
   min-height: calc(var(--cell) * 6 + 14px);
 }
+/* 出目集計パネル */
+.history-wrap { position: relative; }
+#road-stats-panel {
+  position: absolute;
+  right: 0; top: 0; bottom: 0;
+  width: 112px;
+  background: linear-gradient(to right, transparent, rgba(8,8,10,0.97) 28%);
+  display: flex;
+  flex-direction: column;
+  justify-content: space-around;
+  align-items: flex-end;
+  padding: 8px 10px 8px 0;
+  pointer-events: none;
+  border-radius: 0 6px 6px 0;
+}
+.rsp-row { display: flex; flex-direction: column; align-items: flex-end; gap: 0; }
+.rsp-lbl {
+  font-family: 'DM Mono', monospace;
+  font-size: 7px; letter-spacing: 1.5px;
+  color: var(--muted); text-transform: uppercase;
+}
+.rsp-val {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 26px; line-height: 1; letter-spacing: 1px;
+}
+.rsp-pct {
+  font-family: 'DM Mono', monospace;
+  font-size: 9px; color: var(--muted); margin-top: -1px;
+}
+.rsp-b .rsp-val { color: var(--banker-glow); }
+.rsp-p .rsp-val { color: var(--player-glow); }
+.rsp-t .rsp-val { color: var(--tie-glow); }
 #history::-webkit-scrollbar { height: 4px; }
 #history::-webkit-scrollbar-track { background: transparent; }
 #history::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.2); border-radius: 2px; }
@@ -992,7 +1024,26 @@ body.shake { animation: screenShake 0.55s ease-out; }
       <div class="history-title">Big Road</div>
       <div id="history-count">0 rounds</div>
     </div>
-    <div id="history"></div>
+    <div class="history-wrap">
+      <div id="history"></div>
+      <div id="road-stats-panel">
+        <div class="rsp-row rsp-b">
+          <span class="rsp-lbl">BANKER</span>
+          <span class="rsp-val" id="rsp-b">0</span>
+          <span class="rsp-pct" id="rsp-b-p">—</span>
+        </div>
+        <div class="rsp-row rsp-p">
+          <span class="rsp-lbl">PLAYER</span>
+          <span class="rsp-val" id="rsp-p">0</span>
+          <span class="rsp-pct" id="rsp-p-p">—</span>
+        </div>
+        <div class="rsp-row rsp-t">
+          <span class="rsp-lbl">TIE</span>
+          <span class="rsp-val" id="rsp-t">0</span>
+          <span class="rsp-pct" id="rsp-t-p">—</span>
+        </div>
+      </div>
+    </div>
   </div>
   <div id="keisen-section">
     <div class="keisen-grid">
@@ -1625,10 +1676,26 @@ function renderHistory() {
     el.appendChild(div);
   });
 
-  // 右端まで自動スクロール
+  // 右端まで自動スクロール（padding-right分でパネルの左に止まる）
   requestAnimationFrame(() => { el.scrollLeft = el.scrollWidth; });
   renderKeisen();
+  renderRoadStats();
 }
+// === 出目集計パネル ===
+function renderRoadStats() {
+  const b = history.filter(r => r === 'B').length;
+  const p = history.filter(r => r === 'P').length;
+  const t = history.filter(r => r === 'T').length;
+  const total = history.length;
+  const pct = n => total > 0 ? Math.round(n / total * 100) + '%' : '—';
+  document.getElementById('rsp-b').textContent = b;
+  document.getElementById('rsp-p').textContent = p;
+  document.getElementById('rsp-t').textContent = t;
+  document.getElementById('rsp-b-p').textContent = pct(b);
+  document.getElementById('rsp-p-p').textContent = pct(p);
+  document.getElementById('rsp-t-p').textContent = pct(t);
+}
+
 // === 特殊罫線 ===
 let keisenOpen = localStorage.getItem('bbr_keisen') === 'on';
 
