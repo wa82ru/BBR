@@ -483,6 +483,11 @@ header {
   min-height: calc(6 * 14px + 14px);
   overflow-x: auto;
 }
+.kr-grid.kr-derived {
+  --kc: 11px;
+  gap: 0;
+  min-height: calc(6 * 11px + 8px);
+}
 .kr-grid::-webkit-scrollbar { height: 2px; }
 .kr-grid::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.2); border-radius:2px; }
 .kr-cell {
@@ -1053,15 +1058,15 @@ body.shake { animation: screenShake 0.55s ease-out; }
       </div>
       <div class="keisen-panel">
         <div class="keisen-label">大眼仔 · BIG EYE</div>
-        <div class="kr-grid" id="kr-bigeye"></div>
+        <div class="kr-grid kr-derived" id="kr-bigeye"></div>
       </div>
       <div class="keisen-panel">
         <div class="keisen-label">小路 · SMALL</div>
-        <div class="kr-grid" id="kr-small"></div>
+        <div class="kr-grid kr-derived" id="kr-small"></div>
       </div>
       <div class="keisen-panel">
         <div class="keisen-label">甲由路 · COCKROACH</div>
-        <div class="kr-grid" id="kr-cockroach"></div>
+        <div class="kr-grid kr-derived" id="kr-cockroach"></div>
       </div>
     </div>
   </div>
