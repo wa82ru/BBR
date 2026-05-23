@@ -1438,6 +1438,8 @@ function newShoe(flash = false) {
   shoeNumber++;
   updateShoeUI();
   if (flash) {
+    history = [];
+    renderHistory();
     const info = document.getElementById('shoe-info');
     info.classList.add('flash');
     setTimeout(() => info.classList.remove('flash'), 800);
