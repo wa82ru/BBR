@@ -444,134 +444,6 @@ header {
   color: var(--gold-dim);
   letter-spacing: 4px;
 }
-/* ── 特殊罫線セクション ── */
-#keisen-section {
-  overflow: hidden;
-  max-height: 0;
-  transition: max-height 0.35s ease;
-}
-#keisen-section.open { max-height: 600px; }
-.keisen-grid {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 6px;
-  padding: 8px 0 4px;
-}
-.keisen-panel {
-  background: var(--surface);
-  border: 1px solid var(--border);
-  border-radius: 6px;
-  overflow: hidden;
-}
-.keisen-label {
-  font-family: 'DM Mono', monospace;
-  font-size: 8px;
-  letter-spacing: 1.5px;
-  color: var(--muted);
-  padding: 4px 6px 2px;
-  text-transform: uppercase;
-}
-.kr-grid {
-  --kc: 14px;
-  display: grid;
-  grid-template-rows: repeat(6, var(--kc));
-  grid-auto-flow: column;
-  grid-auto-columns: var(--kc);
-  gap: 1px;
-  padding: 3px 5px 5px;
-  background: #08080a;
-  min-height: calc(6 * 14px + 14px);
-  overflow-x: auto;
-}
-.kr-grid.kr-derived {
-  --kc: 11px;
-  gap: 0;
-  min-height: calc(6 * 11px + 8px);
-}
-.kr-grid::-webkit-scrollbar { height: 2px; }
-.kr-grid::-webkit-scrollbar-thumb { background: rgba(201,168,76,0.2); border-radius:2px; }
-.kr-cell {
-  width: var(--kc); height: var(--kc);
-  display: flex; align-items: center; justify-content: center;
-}
-.kr-bead {
-  width: 10px; height: 10px; border-radius: 50%;
-  display: flex; align-items: center; justify-content: center;
-  font-size: 5.5px; font-weight: 700; color: #fff; letter-spacing: 0;
-}
-.kr-bead-b { background: var(--banker); }
-.kr-bead-p { background: var(--player); }
-.kr-bead-t { background: var(--tie); }
-.kr-dot {
-  width: 8px; height: 8px; border-radius: 50%;
-  border: 1.5px solid currentColor;
-}
-.kr-slash {
-  width: 9px; height: 1.5px;
-  background: currentColor;
-  border-radius: 1px;
-  transform: rotate(-45deg);
-}
-.next-slash {
-  width: 7px; height: 1.5px;
-  background: currentColor;
-  border-radius: 1px;
-  transform: rotate(-45deg);
-  display: inline-block;
-  opacity: 0.2;
-}
-.next-slash.nd-red { color: var(--banker-glow); opacity: 1; }
-.next-slash.nd-blue { color: var(--player-glow); opacity: 1; }
-.kr-red { color: var(--banker); }
-.kr-blue { color: var(--player); }
-#keisen-btn { padding: 7px 9px; font-size: 11px; letter-spacing: 1px; }
-#keisen-btn.active { color: var(--gold); border-color: var(--gold-dim); }
-/* NEXT パネル */
-.kr-bead-wrap { position: relative; }
-#kr-bead { padding-right: 52px; }
-#next-panel {
-  position: absolute;
-  right: 0; top: 0; bottom: 0;
-  width: 52px;
-  background: linear-gradient(to right, transparent, rgba(8,8,10,0.97) 32%);
-  display: flex;
-  flex-direction: column;
-  justify-content: flex-end;
-  gap: 5px;
-  padding: 6px 7px 6px 0;
-  pointer-events: none;
-}
-.next-row {
-  display: flex;
-  align-items: center;
-  gap: 3px;
-  justify-content: flex-end;
-}
-.next-lbl {
-  font-family: 'DM Mono', monospace;
-  font-size: 8px;
-  color: var(--muted);
-  width: 8px;
-  text-align: center;
-}
-.next-dot {
-  width: 7px; height: 7px;
-  border-radius: 50%;
-  border: 1.5px solid currentColor;
-  display: inline-block;
-  opacity: 0.2;
-}
-.next-dot.nd-red { color: var(--banker-glow); opacity: 1; }
-.next-dot.nd-blue { color: var(--player-glow); opacity: 1; }
-.next-sublabels { gap: 3px; }
-.next-sub {
-  font-family: 'DM Mono', monospace;
-  font-size: 6px;
-  color: var(--muted);
-  width: 7px;
-  text-align: center;
-  opacity: 0.6;
-}
 /* ── Bet Wheel ── */
 .bet-wheel-wrap {
   position: relative;
@@ -1007,7 +879,6 @@ body.shake { animation: screenShake 0.55s ease-out; }
     </div>
     <div class="header-btns">
       <button id="sound-btn" onclick="toggleSound()" title="サウンドON/OFF">🔊</button>
-      <button id="keisen-btn" onclick="toggleKeisen()" title="特殊罫線">罫</button>
       <button id="swap-btn" onclick="toggleLayout()" title="操作部と大路を入れ替え">⇅</button>
       <button id="reset-btn" onclick="resetGame()">↺ RESET</button>
     </div>
@@ -1112,48 +983,6 @@ body.shake { animation: screenShake 0.55s ease-out; }
       </div>
     </div>
   </div>
-  <div id="keisen-section">
-    <div class="keisen-grid">
-      <div class="keisen-panel">
-        <div class="keisen-label">珠盤路 · BEAD</div>
-        <div class="kr-bead-wrap">
-          <div class="kr-grid" id="kr-bead"></div>
-          <div id="next-panel">
-            <div class="next-row">
-              <span class="next-lbl">B</span>
-              <span class="next-dot" id="nd-b-1"></span>
-              <span class="next-dot" id="nd-b-2"></span>
-              <span class="next-slash" id="nd-b-3"></span>
-            </div>
-            <div class="next-row">
-              <span class="next-lbl">P</span>
-              <span class="next-dot" id="nd-p-1"></span>
-              <span class="next-dot" id="nd-p-2"></span>
-              <span class="next-slash" id="nd-p-3"></span>
-            </div>
-            <div class="next-row next-sublabels">
-              <span></span>
-              <span class="next-sub">仔</span>
-              <span class="next-sub">小</span>
-              <span class="next-sub">甲</span>
-            </div>
-          </div>
-        </div>
-      </div>
-      <div class="keisen-panel">
-        <div class="keisen-label">大眼仔 · BIG EYE</div>
-        <div class="kr-grid kr-derived" id="kr-bigeye"></div>
-      </div>
-      <div class="keisen-panel">
-        <div class="keisen-label">小路 · SMALL</div>
-        <div class="kr-grid kr-derived" id="kr-small"></div>
-      </div>
-      <div class="keisen-panel">
-        <div class="keisen-label">甲由路 · COCKROACH</div>
-        <div class="kr-grid kr-derived" id="kr-cockroach"></div>
-      </div>
-    </div>
-  </div>
   <div class="section-stats">
     <div class="stats-card">
       <div class="stats-header">
@@ -1212,11 +1041,6 @@ function toggleSound() {
 document.addEventListener('DOMContentLoaded', () => {
   const btn = document.getElementById('sound-btn');
   if (!soundEnabled) { btn.textContent = '🔇'; btn.classList.add('muted'); }
-  // 特殊罫線の初期状態
-  if (keisenOpen) {
-    document.getElementById('keisen-section').classList.add('open');
-    document.getElementById('keisen-btn').classList.add('active');
-  }
 });
 
 async function playSfx(name) {
@@ -1744,7 +1568,6 @@ function renderHistory() {
     placeholder.className = 'br-empty';
     placeholder.textContent = '— start —';
     el.appendChild(placeholder);
-    renderKeisen();
     renderRoadStats();
     return;
   }
@@ -1771,7 +1594,6 @@ function renderHistory() {
 
   // 右端まで自動スクロール（padding-right分でパネルの左に止まる）
   requestAnimationFrame(() => { el.scrollLeft = el.scrollWidth; });
-  renderKeisen();
   renderRoadStats();
 }
 // === 出目集計パネル ===
@@ -1787,136 +1609,6 @@ function renderRoadStats() {
   document.getElementById('rsp-b-p').textContent = pct(b);
   document.getElementById('rsp-p-p').textContent = pct(p);
   document.getElementById('rsp-t-p').textContent = pct(t);
-}
-
-// === 特殊罫線 ===
-let keisenOpen = localStorage.getItem('bbr_keisen') === 'on';
-
-function toggleKeisen() {
-  keisenOpen = !keisenOpen;
-  localStorage.setItem('bbr_keisen', keisenOpen ? 'on' : 'off');
-  document.getElementById('keisen-section').classList.toggle('open', keisenOpen);
-  document.getElementById('keisen-btn').classList.toggle('active', keisenOpen);
-  if (keisenOpen) renderKeisen();
-}
-
-// 珠盤路：全結果をT含め縦6行に詰める
-function buildBeadPlate(hist) {
-  return hist.map((r, i) => ({ result: r, row: i % 6, col: Math.floor(i / 6) }));
-}
-
-// 派生罫線（大眼仔/小路/甲由路）共通アルゴリズム
-function buildDerivedRoad(bigRoadCells, offset) {
-  const ROWS = 6;
-  // 大路のセル位置をSetに格納
-  const brSet = new Set(bigRoadCells.map(c => `${c.col},${c.row}`));
-
-  // 各大路セルに対して赤/青を判定
-  const dots = [];
-  for (let i = 0; i < bigRoadCells.length; i++) {
-    const cell = bigRoadCells[i];
-    if (cell.col < offset) continue;
-    const prev = bigRoadCells[i - 1];
-    const isTate = prev && cell.result === prev.result; // 縦=連勝継続
-    let red;
-    if (isTate) {
-      red = brSet.has(`${cell.col - offset},${cell.row}`);
-    } else {
-      red = !brSet.has(`${cell.col - offset},1`);
-    }
-    dots.push(red);
-  }
-
-  // dots を大路と同じレイアウトルールで配置
-  const cells = [];
-  const occ = new Set();
-  const k = (r, c) => `${r},${c}`;
-  let last = null, streakStart = 0;
-  for (const red of dots) {
-    if (!last) {
-      cells.push({ row: 0, col: 0, red });
-      occ.add(k(0, 0));
-      last = { row: 0, col: 0, red };
-      streakStart = 0;
-    } else if (red === last.red) {
-      let r = last.row + 1, c = last.col;
-      if (r >= ROWS || occ.has(k(r, c))) {
-        r = last.row; c = last.col + 1;
-        while (occ.has(k(r, c))) c++;
-      }
-      cells.push({ row: r, col: c, red });
-      occ.add(k(r, c));
-      last = { row: r, col: c, red };
-    } else {
-      let r = 0, c = streakStart + 1;
-      while (occ.has(k(r, c))) c++;
-      cells.push({ row: r, col: c, red });
-      occ.add(k(r, c));
-      last = { row: r, col: c, red };
-      streakStart = c;
-    }
-  }
-  return cells;
-}
-
-function renderKrGrid(elId, cells, type) {
-  const el = document.getElementById(elId);
-  el.innerHTML = '';
-  cells.forEach(c => {
-    const cell = document.createElement('div');
-    cell.className = 'kr-cell';
-    cell.style.gridRow = c.row + 1;
-    cell.style.gridColumn = c.col + 1;
-    if (type === 'bead') {
-      const bead = document.createElement('div');
-      bead.className = 'kr-bead kr-bead-' + c.result.toLowerCase();
-      bead.textContent = c.result;
-      cell.appendChild(bead);
-    } else if (type === 'cockroach') {
-      const slash = document.createElement('div');
-      slash.className = 'kr-slash ' + (c.red ? 'kr-red' : 'kr-blue');
-      cell.appendChild(slash);
-    } else {
-      const dot = document.createElement('div');
-      dot.className = 'kr-dot ' + (c.red ? 'kr-red' : 'kr-blue');
-      cell.appendChild(dot);
-    }
-    el.appendChild(cell);
-  });
-  requestAnimationFrame(() => { el.scrollLeft = el.scrollWidth; });
-}
-
-function getNextDot(nextResult, offset) {
-  const simBigCells = buildBigRoad([...history, nextResult]);
-  const simDerived = buildDerivedRoad(simBigCells, offset);
-  if (simDerived.length === 0) return null;
-  return simDerived[simDerived.length - 1].red;
-}
-
-function renderNextDots() {
-  const pairs = [
-    ['nd-b-1', 'nd-p-1', 1, 'next-dot'],
-    ['nd-b-2', 'nd-p-2', 2, 'next-dot'],
-    ['nd-b-3', 'nd-p-3', 3, 'next-slash'],
-  ];
-  for (const [bId, pId, offset, base] of pairs) {
-    const bDot = document.getElementById(bId);
-    const pDot = document.getElementById(pId);
-    const bRed = getNextDot('B', offset);
-    const pRed = getNextDot('P', offset);
-    bDot.className = base + (bRed === null ? '' : bRed ? ' nd-red' : ' nd-blue');
-    pDot.className = base + (pRed === null ? '' : pRed ? ' nd-red' : ' nd-blue');
-  }
-}
-
-function renderKeisen() {
-  if (!keisenOpen) return;
-  const bigCells = buildBigRoad(history);
-  renderKrGrid('kr-bead',       buildBeadPlate(history), 'bead');
-  renderKrGrid('kr-bigeye',     buildDerivedRoad(bigCells, 1), 'derived');
-  renderKrGrid('kr-small',      buildDerivedRoad(bigCells, 2), 'derived');
-  renderKrGrid('kr-cockroach',  buildDerivedRoad(bigCells, 3), 'cockroach');
-  renderNextDots();
 }
 
 // === 投票履歴・点数推移の描画 ===
