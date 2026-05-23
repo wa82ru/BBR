@@ -1323,6 +1323,11 @@ function evaluate(input) {
       sfxTie.currentTime = 0; sfxTie.play().catch(() => {});
       vibrate([0, 25, 30, 25, 30, 40]);
     } else {
+      if (lastIsNatural) {
+        const winTotal = input === 'P' ? lastPTotal : lastBTotal;
+        if (winTotal === 9) { sfxNatural9.currentTime = 0; sfxNatural9.play().catch(() => {}); }
+        else if (winTotal === 8) { sfxNatural8.currentTime = 0; sfxNatural8.play().catch(() => {}); }
+      }
       showFlash('HIT', 'hit');
       vibrate(15);
     }
@@ -1330,8 +1335,8 @@ function evaluate(input) {
     // プッシュ: P/Bに賭けてTie結果が出た → 賭け金返却。スコア変動なし、コンボは維持
     delta = 0;
     outcome = 'PUSH';
-    showFlash('PUSH', 'tie');
     sfxTie.currentTime = 0; sfxTie.play().catch(() => {});
+    showFlash('PUSH', 'tie');
     vibrate(20);
   } else {
     // 外れ: ベット額没収
@@ -1343,11 +1348,6 @@ function evaluate(input) {
     vibrate([0, 30, 40, 30]);
   }
   showBtnScores(lastPTotal, lastBTotal);
-  if (outcome === 'HIT' && lastIsNatural && (input === 'P' || input === 'B')) {
-    const winTotal = input === 'P' ? lastPTotal : lastBTotal;
-    if (winTotal === 9) { sfxNatural9.currentTime = 0; sfxNatural9.play().catch(() => {}); }
-    else if (winTotal === 8) { sfxNatural8.currentTime = 0; sfxNatural8.play().catch(() => {}); }
-  }
   if (score > best) { best = score; localStorage.setItem('baccarat_best', best); }
   if (combo > bestCombo) { bestCombo = combo; localStorage.setItem('baccarat_best_combo', bestCombo); }
   history.push(current);
