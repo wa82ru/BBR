@@ -736,6 +736,16 @@ body.shake { animation: screenShake 0.55s ease-out; }
 .hist-bet.b-p { background: var(--player); }
 .hist-bet.b-b { background: var(--banker); }
 .hist-bet.b-t { background: var(--tie); }
+.hist-score {
+  font-family: 'DM Mono', monospace;
+  font-size: 10px;
+  letter-spacing: 0;
+  color: var(--muted);
+  opacity: 0.75;
+  white-space: nowrap;
+}
+.hist-score .hs-p { color: var(--player-glow); opacity: 1; }
+.hist-score .hs-b { color: var(--banker-glow); opacity: 1; }
 .hist-arrow {
   color: rgba(255,255,255,0.18);
   font-size: 10px;
@@ -1329,7 +1339,7 @@ function evaluate(input) {
   if (score > best) { best = score; localStorage.setItem('baccarat_best', best); }
   if (combo > bestCombo) { bestCombo = combo; localStorage.setItem('baccarat_best_combo', bestCombo); }
   history.push(current);
-  userHistory.push({ bet: input, result: current, outcome, delta, total: score });
+  userHistory.push({ bet: input, result: current, outcome, delta, total: score, pTotal: lastPTotal, bTotal: lastBTotal });
   // 節目イベント（深いエンゲージメント指標）
   if (!install100Tracked && history.length === 100) { install100Tracked = true; trackEvent('rounds-100'); }
   if (!install500Tracked && history.length === 500) { install500Tracked = true; trackEvent('rounds-500'); }
@@ -1529,7 +1539,17 @@ function renderBetList() {
     delta.className = cls;
     delta.textContent = d.delta === 0 ? '±0' : (d.delta > 0 ? '+' : '') + d.delta;
 
-    row.append(round, bet, arrow, result, delta);
+    const sc = document.createElement('span');
+    sc.className = 'hist-score';
+    const pSpan = document.createElement('span');
+    pSpan.className = 'hs-p';
+    pSpan.textContent = d.pTotal ?? '-';
+    const bSpan = document.createElement('span');
+    bSpan.className = 'hs-b';
+    bSpan.textContent = d.bTotal ?? '-';
+    sc.append(pSpan, ':', bSpan);
+
+    row.append(round, bet, sc, arrow, result, delta);
     el.appendChild(row);
   }
   // 最新が下端 → 最下部までスクロール
