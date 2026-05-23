@@ -966,6 +966,7 @@ const MAX_COMBO_BAR = 10;
 let lastPTotal = null, lastBTotal = null, lastIsNatural = false;
 const sfxNatural9 = new Audio('naturalnine.mp3');
 const sfxNatural8 = new Audio('naturaleight.mp3');
+const sfxTie = new Audio('tie.mp3');
 
 // === GoatCounter カスタムイベント ===
 function trackEvent(name) {
@@ -1319,6 +1320,7 @@ function evaluate(input) {
     combo++;
     if (current === 'T') {
       showFlash('+' + delta, 'hit');
+      sfxTie.currentTime = 0; sfxTie.play().catch(() => {});
       vibrate([0, 25, 30, 25, 30, 40]);
     } else {
       showFlash('HIT', 'hit');
@@ -1329,6 +1331,7 @@ function evaluate(input) {
     delta = 0;
     outcome = 'PUSH';
     showFlash('PUSH', 'tie');
+    sfxTie.currentTime = 0; sfxTie.play().catch(() => {});
     vibrate(20);
   } else {
     // 外れ: ベット額没収
