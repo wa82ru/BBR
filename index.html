@@ -1744,6 +1744,8 @@ function renderHistory() {
     placeholder.className = 'br-empty';
     placeholder.textContent = '— start —';
     el.appendChild(placeholder);
+    renderKeisen();
+    renderRoadStats();
     return;
   }
 
