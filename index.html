@@ -102,17 +102,17 @@ body::after {
   display: flex;
   flex-direction: column;
 }
-/* デフォルトの並び順 */
+/* デフォルトの並び順（大路が上、操作部が下） */
 .wrapper > header        { order: 1; }
 .wrapper > .score-grid   { order: 2; }
 .wrapper > .shoe-info    { order: 3; }
-.wrapper > .section-controls { order: 4; }
+.wrapper > .section-history  { order: 4; }
 .wrapper > .divider      { order: 5; }
-.wrapper > .section-history  { order: 6; }
+.wrapper > .section-controls { order: 6; }
 .wrapper > .section-stats    { order: 7; }
-/* レイアウト反転時：大路を上、操作部を下に。stats は常に最下部 */
-.wrapper.flipped > .section-history  { order: 4; }
-.wrapper.flipped > .section-controls { order: 6; }
+/* レイアウト反転時：操作部を上、大路を下に。stats は常に最下部 */
+.wrapper.flipped > .section-controls { order: 4; }
+.wrapper.flipped > .section-history  { order: 6; }
 .wrapper.flipped > .section-stats    { order: 7; }
 /* ── Header ── */
 header {
@@ -1750,10 +1750,11 @@ function toggleLayout() {
   w.classList.toggle('flipped');
   localStorage.setItem('baccarat_layout', w.classList.contains('flipped') ? 'flipped' : 'default');
 }
-// 起動時に前回のレイアウトを復元
+// 起動時に前回のレイアウトを復元（デフォルト=大路上・操作部下、flipped=操作部上・大路下）
 if (localStorage.getItem('baccarat_layout') === 'flipped') {
   document.querySelector('.wrapper').classList.add('flipped');
 }
+// 旧デフォルト（'default'保存）だった場合はflippedクラスなし＝新デフォルトと同じなので何もしない
 
 update();
 newShoe(false);
