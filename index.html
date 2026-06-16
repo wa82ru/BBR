@@ -851,9 +851,11 @@ body.shake { animation: screenShake 0.55s ease-out; }
   color: #fff;
   letter-spacing: 0;
 }
-.hist-bet.b-p { background: var(--player); }
-.hist-bet.b-b { background: var(--banker); }
-.hist-bet.b-t { background: var(--tie); }
+.hist-bet.b-p  { background: var(--player); }
+.hist-bet.b-b  { background: var(--banker); }
+.hist-bet.b-t  { background: var(--tie); }
+.hist-bet.b-tb { background: linear-gradient(135deg, var(--tie) 50%, var(--banker) 50%); }
+.hist-bet.b-tp { background: linear-gradient(135deg, var(--tie) 50%, var(--player) 50%); }
 .hist-score {
   font-family: 'DM Mono', monospace;
   font-size: 10px;
@@ -1020,7 +1022,7 @@ body.shake { animation: screenShake 0.55s ease-out; }
         <span class="btn-score" id="score-p"></span>
         <span class="main">PLAYER</span>
       </button>
-      <button class="bet-btn btn-t" onclick="hit('T')">
+      <button class="bet-btn btn-t" onclick="showTiePicker()">
         <span class="btn-icon">◈ T I E</span>
         <span class="main">TIE</span>
       </button>
@@ -1316,6 +1318,40 @@ function checkAchievementUnlock() {
   }
 }
 
+function showTiePicker() {
+  const existing = document.getElementById('tie-picker');
+  if (existing) { existing.remove(); return; }
+  const sheet = document.createElement('div');
+  sheet.id = 'tie-picker';
+  sheet.style.cssText = 'position:fixed;inset:0;z-index:9998;background:rgba(0,0,0,0.65);display:flex;align-items:flex-end;justify-content:center;';
+  const bStyle = (r,g,b) => `width:100%;padding:14px 16px;margin-bottom:10px;background:rgba(${r},${g},${b},0.1);border:1px solid rgba(${r},${g},${b},0.4);border-radius:10px;color:#e8e0d0;font-family:'DM Mono',monospace;font-size:11px;letter-spacing:1.5px;cursor:pointer;display:flex;justify-content:space-between;align-items:center;text-align:left;`;
+  sheet.innerHTML = `
+    <div style="background:#18181f;border-radius:18px 18px 0 0;padding:22px 20px 36px;width:100%;max-width:520px;border-top:1px solid rgba(30,140,90,0.3);">
+      <div style="font-family:'Bebas Neue',sans-serif;font-size:20px;letter-spacing:3px;color:#4ade80;margin-bottom:4px;">TIE BET</div>
+      <div style="font-family:'DM Mono',monospace;font-size:9px;color:#8a8070;letter-spacing:1px;margin-bottom:18px;">ベット方法を選択</div>
+      <button onclick="selectTieBet('T')" style="${bStyle(30,140,90)}">
+        <span>TIE ONLY</span>
+        <span style="color:#8a8070;font-size:9px;">T→+8× &nbsp; B/P→−1×</span>
+      </button>
+      <button onclick="selectTieBet('TB')" style="${bStyle(192,57,43)}">
+        <span>TIE + <span style="color:#ff6b5b;">BANKER</span></span>
+        <span style="color:#8a8070;font-size:9px;">T→+8× &nbsp; B→±0 &nbsp; P→−2×</span>
+      </button>
+      <button onclick="selectTieBet('TP')" style="${bStyle(26,111,168)}">
+        <span>TIE + <span style="color:#5ab3f5;">PLAYER</span></span>
+        <span style="color:#8a8070;font-size:9px;">T→+8× &nbsp; P→±0 &nbsp; B→−2×</span>
+      </button>
+      <button onclick="document.getElementById('tie-picker').remove()" style="width:100%;padding:12px;background:transparent;border:1px solid rgba(255,255,255,0.1);border-radius:10px;color:#8a8070;font-family:'DM Mono',monospace;font-size:10px;letter-spacing:2px;cursor:pointer;">キャンセル</button>
+    </div>`;
+  document.body.appendChild(sheet);
+  sheet.addEventListener('click', e => { if (e.target === sheet) sheet.remove(); });
+}
+
+function selectTieBet(type) {
+  document.getElementById('tie-picker')?.remove();
+  hit(type);
+}
+
 function unlockBetWheel() {
   betUnlocked = true;
   localStorage.setItem('bet_unlocked', 'true');
@@ -1492,7 +1528,8 @@ function hit(input) {
 
 function evaluate(input) {
   locked = true;
-  const btn = document.querySelector(input === 'P' ? '.btn-p' : input === 'T' ? '.btn-t' : '.btn-b');
+  const isTieCombo = input === 'TB' || input === 'TP';
+  const btn = document.querySelector((input === 'T' || isTieCombo) ? '.btn-t' : input === 'P' ? '.btn-p' : '.btn-b');
   // pressed クラスを毎回付け直してアニメーションを再トリガー
   btn.classList.remove('pressed');
   void btn.offsetWidth;
@@ -1500,7 +1537,33 @@ function evaluate(input) {
   setTimeout(() => btn.classList.remove('pressed'), 200);
 
   let outcome, delta;
-  if (input === current) {
+  if (isTieCombo) {
+    const sideBet = input === 'TB' ? 'B' : 'P';
+    if (current === 'T') {
+      // TIE的中: TIE +8x、サイドはプッシュ
+      delta = currentBet * 8;
+      outcome = 'HIT';
+      score += delta;
+      combo++;
+      showFlash('+' + delta, 'hit');
+      playSfx('tie');
+      vibrate([0, 25, 30, 25, 30, 40]);
+    } else if (current === sideBet) {
+      // サイド的中: TIEは負け、サイドは勝ち → 相殺でゼロ
+      delta = 0;
+      outcome = 'PUSH';
+      showFlash('PUSH', 'tie');
+      vibrate(20);
+    } else {
+      // 両方外れ: TIE + サイド 合計 -2x
+      delta = -(currentBet * 2);
+      outcome = 'MISS';
+      score += delta;
+      combo = 0;
+      showFlash('-' + (currentBet * 2), 'miss');
+      vibrate([0, 30, 40, 30]);
+    }
+  } else if (input === current) {
     // 当たり: ベット額 × 倍率
     delta = currentBet * PAYOUT[current];
     outcome = 'HIT';
