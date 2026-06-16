@@ -50,6 +50,8 @@
 <link rel="icon" type="image/png" sizes="192x192" href="icon-192.png">
 <link rel="icon" type="image/png" sizes="512x512" href="icon-512.png">
 <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@300;400;600;700&family=Bebas+Neue&family=DM+Mono:wght@300;400&display=swap" rel="stylesheet">
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore-compat.js"></script>
 <!-- GoatCounter アクセス解析（PV、地域、リファラ） -->
 <script data-goatcounter="https://countb.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
 <style>
@@ -188,6 +190,63 @@ header {
 #swap-btn { padding: 7px 11px; font-size: 12px; }
 #sound-btn { padding: 7px 11px; font-size: 13px; }
 #sound-btn.muted { color: #444; border-color: #2a2a2a; }
+#rank-btn { padding: 7px 11px; font-size: 13px; }
+/* ── モーダル共通 ── */
+.modal-overlay {
+  position: fixed; inset: 0; z-index: 9999;
+  background: rgba(0,0,0,0.78);
+  display: flex; align-items: flex-end; justify-content: center;
+}
+.modal-sheet {
+  background: #18181f;
+  border-radius: 18px 18px 0 0;
+  padding: 24px 20px 44px;
+  width: 100%; max-width: 520px;
+  border-top: 1px solid rgba(201,168,76,0.2);
+  max-height: 82vh; overflow-y: auto;
+}
+.modal-title {
+  font-family: 'Bebas Neue', sans-serif;
+  font-size: 22px; letter-spacing: 3px; color: var(--gold-light);
+}
+/* ── ランキング ── */
+.rank-tabs { display: flex; gap: 8px; margin: 14px 0 12px; }
+.rank-tab {
+  flex: 1; padding: 8px 4px;
+  font-family: 'DM Mono', monospace; font-size: 9px; letter-spacing: 2px;
+  border: 1px solid var(--border); border-radius: 6px;
+  background: transparent; color: var(--muted); cursor: pointer;
+  transition: all 0.2s; text-transform: uppercase;
+}
+.rank-tab.active { border-color: var(--gold-dim); color: var(--gold); }
+.rank-row {
+  display: flex; align-items: center; gap: 10px;
+  padding: 9px 6px;
+  border-bottom: 1px solid rgba(201,168,76,0.05);
+}
+.rank-row.rank-mine { background: rgba(201,168,76,0.06); border-radius: 4px; }
+.rank-pos { width: 28px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--gold-dim); text-align: center; }
+.rank-pos.top3 { font-size: 16px; }
+.rank-name { flex: 1; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rank-val { font-family: 'Bebas Neue', sans-serif; font-size: 22px; letter-spacing: 1px; line-height: 1; }
+.rank-val.sv { color: var(--banker-glow); }
+.rank-val.cv { color: var(--player-glow); }
+/* ── ニックネーム入力 ── */
+.nick-input {
+  width: 100%; padding: 13px;
+  background: #111118; border: 1px solid var(--border); border-radius: 8px;
+  color: var(--text); font-family: 'DM Mono', monospace; font-size: 15px;
+  outline: none; box-sizing: border-box; margin: 14px 0;
+}
+.nick-input:focus { border-color: var(--gold-dim); }
+.modal-btn-row { display: flex; gap: 8px; margin-top: 4px; }
+.modal-btn {
+  flex: 1; padding: 12px;
+  border-radius: 8px; font-family: 'DM Mono', monospace;
+  font-size: 10px; letter-spacing: 2px; cursor: pointer; transition: all 0.2s;
+}
+.modal-btn.cancel { background: transparent; border: 1px solid rgba(255,255,255,0.1); color: var(--muted); }
+.modal-btn.confirm { flex: 2; background: rgba(201,168,76,0.15); border: 1px solid rgba(201,168,76,0.4); color: var(--gold); }
 /* ── Score Panel ── */
 .score-grid {
   display: grid;
@@ -903,6 +962,7 @@ body.shake { animation: screenShake 0.55s ease-out; }
       <span>rhythm</span>
     </div>
     <div class="header-btns">
+      <button id="rank-btn" onclick="showRanking()" title="ランキング">🏆</button>
       <button id="sound-btn" onclick="toggleSound()" title="サウンドON/OFF">🔊</button>
       <button id="swap-btn" onclick="toggleLayout()" title="操作部と大路を入れ替え">⇅</button>
       <button id="reset-btn" onclick="resetGame()">↺ RESET</button>
@@ -1467,8 +1527,10 @@ function evaluate(input) {
     vibrate([0, 30, 40, 30]);
   }
   showBtnScores(lastPTotal, lastBTotal);
-  if (score > best) { best = score; localStorage.setItem('baccarat_best', best); }
-  if (combo > bestCombo) { bestCombo = combo; localStorage.setItem('baccarat_best_combo', bestCombo); }
+  let newBest = false;
+  if (score > best) { best = score; localStorage.setItem('baccarat_best', best); newBest = true; }
+  if (combo > bestCombo) { bestCombo = combo; localStorage.setItem('baccarat_best_combo', bestCombo); newBest = true; }
+  if (newBest) submitRanking();
   history.push(current);
   userHistory.push({ bet: input, result: current, outcome, delta, total: score, pTotal: lastPTotal, bTotal: lastBTotal });
   // 節目イベント（深いエンゲージメント指標）
@@ -1755,6 +1817,117 @@ function renderChartStats() {
   document.getElementById('stat-total').textContent = total;
   document.getElementById('stat-max').textContent = (max > 0 ? '+' : '') + max.toLocaleString();
   document.getElementById('stat-min').textContent = min < 0 ? min.toLocaleString() : '0';
+}
+
+// === Firebase / ランキング ===
+const fbConfig = {
+  apiKey: "AIzaSyB82X84u-8duPNLhgrFVnJT1a9lN-kS7J4",
+  authDomain: "baccarat-rhythm-d3740.firebaseapp.com",
+  projectId: "baccarat-rhythm-d3740",
+  storageBucket: "baccarat-rhythm-d3740.firebasestorage.app",
+  messagingSenderId: "932442931806",
+  appId: "1:932442931806:web:840e7e57841785b290eacf"
+};
+let db = null;
+try { firebase.initializeApp(fbConfig); db = firebase.firestore(); } catch(e) {}
+
+function getUID() {
+  let uid = localStorage.getItem('bbr_uid');
+  if (!uid) { uid = ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16)); localStorage.setItem('bbr_uid', uid); }
+  return uid;
+}
+function getNickname() { return localStorage.getItem('bbr_nickname') || ''; }
+function saveNick() {
+  const val = (document.getElementById('nick-input')?.value || '').trim().slice(0, 12);
+  if (!val) { alert('ニックネームを入力してください'); return; }
+  localStorage.setItem('bbr_nickname', val);
+  document.getElementById('nick-overlay')?.remove();
+  if (window._nickCb) { const cb = window._nickCb; window._nickCb = null; cb(); }
+}
+function esc(s) { return String(s).replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c])); }
+
+async function submitRanking() {
+  if (!db || !getNickname() || history.length < 10) return;
+  const uid = getUID(), nn = getNickname(), ts = firebase.firestore.FieldValue.serverTimestamp();
+  try {
+    if (score > 0) await db.collection('score_ranking').doc(uid).set({ nickname: nn, score, rounds: history.length, updatedAt: ts }, { merge: true });
+    if (bestCombo > 0) await db.collection('combo_ranking').doc(uid).set({ nickname: nn, combo: bestCombo, updatedAt: ts }, { merge: true });
+  } catch(e) {}
+}
+
+let rankTab = 'score';
+function showRanking() {
+  if (!getNickname()) { showNicknameModal(showRanking); return; }
+  document.getElementById('rank-overlay')?.remove();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay'; ov.id = 'rank-overlay';
+  ov.innerHTML = `<div class="modal-sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center">
+      <div class="modal-title">🏆 RANKING</div>
+      <button onclick="document.getElementById('rank-overlay').remove()" style="background:none;border:none;color:var(--muted);font-size:22px;cursor:pointer;line-height:1">×</button>
+    </div>
+    <div class="rank-tabs">
+      <button class="rank-tab active" id="tab-score" onclick="switchRankTab('score')">⬆ SCORE</button>
+      <button class="rank-tab" id="tab-combo" onclick="switchRankTab('combo')">🔥 COMBO</button>
+    </div>
+    <div id="rank-list"><div style="text-align:center;padding:36px;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">読み込み中...</div></div>
+    <div style="margin-top:16px;text-align:right">
+      <button onclick="showNicknameModal(showRanking)" style="background:none;border:1px solid var(--border);color:var(--muted);font-family:'DM Mono',monospace;font-size:9px;letter-spacing:1px;padding:6px 10px;border-radius:4px;cursor:pointer">✏️ ニックネーム変更</button>
+    </div>
+  </div>`;
+  ov.addEventListener('click', e => { if (e.target === ov) ov.remove(); });
+  document.body.appendChild(ov);
+  rankTab = 'score';
+  loadRankList();
+}
+async function switchRankTab(tab) {
+  rankTab = tab;
+  document.getElementById('tab-score')?.classList.toggle('active', tab === 'score');
+  document.getElementById('tab-combo')?.classList.toggle('active', tab === 'combo');
+  await loadRankList();
+}
+async function loadRankList() {
+  const el = document.getElementById('rank-list');
+  if (!el) return;
+  const empty = msg => `<div style="text-align:center;padding:36px;font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">${msg}</div>`;
+  if (!db) { el.innerHTML = empty('オフライン'); return; }
+  el.innerHTML = empty('読み込み中...');
+  try {
+    const col = rankTab === 'score' ? 'score_ranking' : 'combo_ranking';
+    const field = rankTab === 'score' ? 'score' : 'combo';
+    const snap = await db.collection(col).orderBy(field, 'desc').limit(10).get();
+    const uid = getUID();
+    const medals = ['🥇','🥈','🥉'];
+    if (snap.empty) { el.innerHTML = empty('まだ記録なし'); return; }
+    el.innerHTML = snap.docs.map((doc, i) => {
+      const d = doc.data(), isMe = doc.id === uid;
+      const val = rankTab === 'score' ? Number(d.score).toLocaleString() : d.combo;
+      const cls = rankTab === 'score' ? 'sv' : 'cv';
+      return `<div class="rank-row${isMe ? ' rank-mine' : ''}">
+        <span class="rank-pos${i < 3 ? ' top3' : ''}">${i < 3 ? medals[i] : i+1}</span>
+        <span class="rank-name">${esc(d.nickname)}${isMe ? ' 👤' : ''}</span>
+        <span class="rank-val ${cls}">${val}</span>
+      </div>`;
+    }).join('');
+  } catch(e) { el.innerHTML = empty('読み込みエラー'); }
+}
+function showNicknameModal(cb) {
+  document.getElementById('nick-overlay')?.remove();
+  window._nickCb = cb || null;
+  const cur = getNickname();
+  const ov = document.createElement('div');
+  ov.className = 'modal-overlay'; ov.id = 'nick-overlay';
+  ov.innerHTML = `<div class="modal-sheet">
+    <div class="modal-title">NICKNAME</div>
+    <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted);margin-top:8px;letter-spacing:1px">ランキングに表示される名前（最大12文字）</div>
+    <input id="nick-input" class="nick-input" type="text" maxlength="12" placeholder="例：みやもと" value="${esc(cur)}">
+    <div class="modal-btn-row">
+      <button class="modal-btn cancel" onclick="document.getElementById('nick-overlay').remove()">キャンセル</button>
+      <button class="modal-btn confirm" onclick="saveNick()">保存して続ける</button>
+    </div>
+  </div>`;
+  document.body.appendChild(ov);
+  setTimeout(() => document.getElementById('nick-input')?.focus(), 50);
 }
 
 function resetGame() {
