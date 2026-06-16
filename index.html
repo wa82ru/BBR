@@ -1095,10 +1095,18 @@ body.shake { animation: screenShake 0.55s ease-out; }
       </div>
     </div>
   </div>
-  <footer style="margin-top:28px; padding: 14px 0 4px; border-top: 1px solid rgba(201,168,76,0.08); font-family:'DM Mono',monospace; font-size:9px; line-height:1.8; color:rgba(138,128,112,0.55); letter-spacing:0.5px;">
-    <p>Baccarat Rhythm はバカラ練習に特化した無料のカジノゲームアプリです。6デッキ・312枚のリアルなシューでバンカー・プレイヤーの流れを読む感覚を鍛えましょう。大路で出目を確認しながら、本番のオンラインカジノに近い環境でバカラの練習ができます。インストール不要、スマホ対応。</p>
-    <p>最終更新：2026年6月16日 ／ 全プレイヤーのスコア・コンボランキング機能を追加</p>
-  </footer>
+  <footer id="seo-footer" style="margin-top:28px; padding: 14px 0 4px; border-top: 1px solid rgba(201,168,76,0.08); font-family:'DM Mono',monospace; font-size:9px; line-height:1.8; color:rgba(138,128,112,0.55); letter-spacing:0.5px;"></footer>
+  <script>
+  (function(){
+    var ja = navigator.language && navigator.language.toLowerCase().startsWith('ja');
+    var f = document.getElementById('seo-footer');
+    if(ja){
+      f.innerHTML = '<p>Baccarat Rhythm はバカラ練習に特化した無料のカジノゲームアプリです。6デッキ・312枚のリアルなシューでバンカー・プレイヤーの流れを読む感覚を鍛えましょう。大路で出目を確認しながら、本番のオンラインカジノに近い環境でバカラの練習ができます。インストール不要、スマホ対応。</p><p>最終更新：2026年6月16日 ／ 全プレイヤーのスコア・コンボランキング機能を追加</p>';
+    } else {
+      f.innerHTML = '<p>Baccarat Rhythm is a free baccarat practice app. Train your instincts for reading Banker/Player streaks with a realistic 6-deck, 312-card shoe. Track results on the Big Road display — no install needed, mobile-friendly.</p><p>Last updated: June 16, 2026 / Added global score &amp; combo leaderboard</p>';
+    }
+  })();
+  </script>
 </div>
 <script>
 let score = 0, combo = 0, history = [], locked = false, current = null;
