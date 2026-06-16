@@ -1925,10 +1925,17 @@ function getUID() {
   if (!uid) { uid = ([1e7]+-1e3+-4e3+-8e3+-1e11).replace(/[018]/g,c=>(c^crypto.getRandomValues(new Uint8Array(1))[0]&15>>c/4).toString(16)); localStorage.setItem('bbr_uid', uid); }
   return uid;
 }
+function getDeviceCode() {
+  const ua = navigator.userAgent;
+  if (/android/i.test(ua)) return 'A';
+  if (/iPad/.test(ua) || (/Mac/.test(ua) && navigator.maxTouchPoints > 1)) return 'P';
+  if (/iPhone/.test(ua)) return 'i';
+  return 'D';
+}
 function getNickname() {
   let nn = localStorage.getItem('bbr_nickname');
   if (!nn) {
-    nn = 'Guest-' + Math.random().toString(36).slice(2, 6).toUpperCase();
+    nn = 'Guest-' + Math.random().toString(36).slice(2, 6).toUpperCase() + '-' + getDeviceCode();
     localStorage.setItem('bbr_nickname', nn);
   }
   return nn;
